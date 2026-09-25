@@ -1,0 +1,32 @@
+# CODEOWNERS — skill-leveling-platform
+# Each line maps a path pattern to the owning GitHub team/username.
+# The last matching rule wins for each file.
+
+# Core infrastructure, auth, user management, docs, migrations
+app/core/                        @member1
+app/modules/auth/                @member1
+app/modules/users/               @member1
+docs/                            @member1
+migrations/                      @member1
+
+# Domain structure and analytics
+app/modules/domains/             @member2
+app/modules/analytics/           @member2
+
+# Exams, slots, halls, and notifications
+app/modules/exams/               @member3
+app/modules/slots/               @member3
+app/modules/halls/               @member3
+app/modules/notifications/       @member3
+
+# Allocation, secret codes, and hall sheets
+app/modules/allocation/          @member4
+app/modules/secret_code/         @member4
+app/modules/hall_sheets/         @member4
+
+# Progress tracking and attempt lifecycle
+app/modules/progress/            @member5
+app/modules/attempts/            @member5
+
+# AI question generation engine
+app/modules/ai_engine/           @member6
