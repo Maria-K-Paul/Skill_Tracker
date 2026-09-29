@@ -20,11 +20,19 @@ from app.core.database import Base
 
 # ── Import all models so Alembic autogenerate can see them ───────────────────
 # These imports must remain even if not explicitly referenced below.
-from app.modules.slots.models import Slot, SlotHall, SlotBooking  # noqa: F401
-from app.modules.allocation.models import Allocation  # noqa: F401
-from app.modules.secret_code.models import SecretCode  # noqa: F401
-# halls.models and other out-of-scope modules are imported by their owners.
-# We intentionally do NOT import them here to avoid autogenerating their tables.
+from app.modules.users.models import User, Department, AcademicYear, Student, DomainIncharge
+from app.modules.auth.models import Role, UserRole, RefreshToken
+from app.modules.domains.models import Track, Level, Topic, Subtopic
+from app.modules.progress.models import Enrollment, LevelProgress, ProgressionDecision
+from app.modules.exams.models import Assessment
+from app.modules.slots.models import Slot, SlotHall, SlotBooking
+from app.modules.halls.models import Hall
+from app.modules.allocation.models import Allocation
+from app.modules.secret_code.models import SecretCode
+from app.modules.attempts.models import Attempt, ExamSession, ProctoringEvent, AttemptAnswer, Result, TopicResult
+from app.modules.ai_engine.models import Question, QuestionOption
+from app.modules.analytics.models import AnalyticsRefreshJob, StudentPerformanceSummary, DomainPerformanceSummary, SemesterProgressSummary, TopicGapSummary, DifficultyPerformanceSummary, DashboardWidgetCache
+from app.core.audit import AuditLog
 
 # ── Alembic Config ────────────────────────────────────────────────────────────
 config = context.config

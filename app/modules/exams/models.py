@@ -1,28 +1,14 @@
-"""
-app/modules/exams/models.py
-----------------------------
-ORM model placeholders for assessment (exam definition) tables.
 
-Tables covered: assessments.
-Column comments match docs/db_schema.md exactly.
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from app.core.database import Base
 
-TODO: Add SQLAlchemy Column definitions.
-TODO: Add relationship to slots via Slot.assessment_id.
-"""
-
-
-class Assessment:
-    """
-    An exam definition created by an admin for a specific level.
-    Duration and status are set at creation time.
-
-    Table: assessments
-        # id: INTEGER (PK)
-        # level_id: INTEGER (FK → levels)
-        # title: VARCHAR
-        # duration_minutes: INTEGER
-        # status: VARCHAR
-        # created_by: INTEGER (FK → users)
-        # created_at: TIMESTAMP
-    """
-    pass
+class Assessment(Base):
+    __tablename__ = 'assessments'
+    id = Column(Integer, primary_key=True)
+    level_id = Column(Integer, ForeignKey('levels.id'))
+    title = Column(String)
+    duration_minutes = Column(Integer)
+    status = Column(String)
+    created_by = Column(Integer, ForeignKey('users.id'))
+    created_at = Column(DateTime)

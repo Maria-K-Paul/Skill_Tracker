@@ -1,55 +1,29 @@
-"""
-app/modules/progress/models.py
---------------------------------
-ORM model placeholders for enrollment and progression tracking.
 
-Tables covered: enrollments, level_progress, progression_decisions.
-Column comments match docs/db_schema.md exactly.
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from app.core.database import Base
 
-TODO: Add SQLAlchemy Column definitions.
-TODO: Add relationship from Enrollment to LevelProgress list.
-"""
+class Enrollment(Base):
+    __tablename__ = 'enrollments'
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'))
+    track_id = Column(Integer, ForeignKey('tracks.id'))
+    enrolled_at = Column(DateTime)
+    is_blocked = Column(Boolean, default=False)
 
+class LevelProgress(Base):
+    __tablename__ = 'level_progress'
+    id = Column(Integer, primary_key=True)
+    enrollment_id = Column(Integer, ForeignKey('enrollments.id'))
+    level_id = Column(Integer, ForeignKey('levels.id'))
+    status = Column(String)
+    unlocked_at = Column(DateTime)
+    completed_at = Column(DateTime)
 
-class Enrollment:
-    """
-    A student's enrollment in a track. is_blocked=True after 3 failed attempts.
-
-    Table: enrollments
-        # id: INTEGER (PK)
-        # student_id: INTEGER (FK → students)
-        # track_id: INTEGER (FK → tracks)
-        # enrolled_at: TIMESTAMP
-        # is_blocked: BOOLEAN
-    """
-    pass
-
-
-class LevelProgress:
-    """
-    Tracks a student's progress on a specific level within an enrollment.
-
-    Table: level_progress
-        # id: INTEGER (PK)
-        # enrollment_id: INTEGER (FK → enrollments)
-        # level_id: INTEGER (FK → levels)
-        # status: VARCHAR
-        # unlocked_at: TIMESTAMP
-        # completed_at: TIMESTAMP
-    """
-    pass
-
-
-class ProgressionDecision:
-    """
-    Records the outcome decision after an attempt is scored.
-    Decision values: 'advance', 'retry', 'blocked'.
-
-    Table: progression_decisions
-        # id: INTEGER (PK)
-        # attempt_id: INTEGER (FK → attempts)
-        # result_id: INTEGER (FK → results)
-        # decision: VARCHAR
-        # decided_at: TIMESTAMP
-    """
-    pass
+class ProgressionDecision(Base):
+    __tablename__ = 'progression_decisions'
+    id = Column(Integer, primary_key=True)
+    attempt_id = Column(Integer, ForeignKey('attempts.id'))
+    result_id = Column(Integer, ForeignKey('results.id'))
+    decision = Column(String)
+    decided_at = Column(DateTime)

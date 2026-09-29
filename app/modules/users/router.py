@@ -1,22 +1,19 @@
-"""
-app/modules/users/router.py
----------------------------
-Users module router — student profile and admin user management.
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.core.database import get_db
+from app.core.dependencies import get_current_user, require_admin
+from app.modules.users.models import User, Student
 
-Placeholder returns {"module": "users", "status": "ok"}.
+router = APIRouter(prefix="/users", tags=["Users"])
 
-TODO: GET  /users/me             — current student's profile
-TODO: GET  /users/{student_id}   — admin: get any student profile
-TODO: GET  /users/               — admin: list students with filters
-TODO: GET  /users/incharge/scope — domain incharge: get track scope
-"""
+@router.get("/me")
+async def get_me(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Student).where(Student.user_id == current_user["id"]))
+    student = result.scalars().first()
+    return {"user": current_user["user"], "student": student, "roles": current_user["roles"]}
 
-from fastapi import APIRouter
-
-router = APIRouter()
-
-
-@router.get("/", summary="Users module health check")
-async def users_root() -> dict:
-    """Placeholder endpoint — confirms the users module is mounted."""
-    return {"module": "users", "status": "ok"}
+@router.get("/")
+async def list_users(db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_admin)):
+    result = await db.execute(select(User))
+    return result.scalars().all()
