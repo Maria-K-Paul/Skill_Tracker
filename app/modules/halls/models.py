@@ -1,24 +1,10 @@
-"""
-app/modules/halls/models.py
-----------------------------
-ORM model placeholders for hall management.
 
-Tables covered: halls.
-Column comments match docs/db_schema.md exactly.
+from sqlalchemy import Column, Integer, String
+from app.core.database import Base
 
-TODO: Add SQLAlchemy Column definitions.
-TODO: Add relationship to slot_halls.
-"""
-
-
-class Hall:
-    """
-    A physical examination hall with name, location, and seating capacity.
-
-    Table: halls
-        # id: INTEGER (PK)
-        # name: VARCHAR
-        # location: VARCHAR
-        # capacity: INTEGER
-    """
-    pass
+class Hall(Base):
+    __tablename__ = 'halls'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    location = Column(String)
+    capacity = Column(Integer)

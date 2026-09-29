@@ -1,118 +1,64 @@
-"""
-app/modules/analytics/models.py
----------------------------------
-ORM model placeholders for analytics summary tables and dashboard cache.
 
-Tables covered:
-  analytics_refresh_jobs, student_performance_summary,
-  domain_performance_summary, semester_progress_summary,
-  topic_gap_summary, difficulty_performance_summary,
-  dashboard_widget_cache.
-Column comments match docs/db_schema.md exactly.
+from sqlalchemy import Column, Integer, String, DateTime, Float, JSON, ForeignKey
+from sqlalchemy.orm import relationship
+from app.core.database import Base
 
-TODO: Add SQLAlchemy Column definitions.
-TODO: Add unique constraints on (student_id, track_id) for summary tables.
-"""
+class AnalyticsRefreshJob(Base):
+    __tablename__ = 'analytics_refresh_jobs'
+    id = Column(Integer, primary_key=True)
+    job_name = Column(String)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    status = Column(String)
 
+class StudentPerformanceSummary(Base):
+    __tablename__ = 'student_performance_summary'
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'))
+    track_id = Column(Integer, ForeignKey('tracks.id'))
+    total_attempts = Column(Integer)
+    passed_levels = Column(Integer)
+    avg_percentage = Column(Float)
+    last_updated = Column(DateTime)
 
-class AnalyticsRefreshJob:
-    """
-    Tracks execution of nightly/periodic analytics refresh jobs.
+class DomainPerformanceSummary(Base):
+    __tablename__ = 'domain_performance_summary'
+    id = Column(Integer, primary_key=True)
+    track_id = Column(Integer, ForeignKey('tracks.id'))
+    total_students = Column(Integer)
+    avg_pass_rate = Column(Float)
+    last_updated = Column(DateTime)
 
-    Table: analytics_refresh_jobs
-        # id: INTEGER (PK)
-        # job_name: VARCHAR
-        # started_at: TIMESTAMP
-        # finished_at: TIMESTAMP
-        # status: VARCHAR
-    """
-    pass
+class SemesterProgressSummary(Base):
+    __tablename__ = 'semester_progress_summary'
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'))
+    academic_year_id = Column(Integer, ForeignKey('academic_years.id'))
+    levels_completed = Column(Integer)
+    last_updated = Column(DateTime)
 
+class TopicGapSummary(Base):
+    __tablename__ = 'topic_gap_summary'
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'))
+    topic_id = Column(Integer, ForeignKey('topics.id'))
+    avg_accuracy = Column(Float)
+    attempt_count = Column(Integer)
+    last_updated = Column(DateTime)
 
-class StudentPerformanceSummary:
-    """
-    Aggregated per-student, per-track performance metrics.
+class DifficultyPerformanceSummary(Base):
+    __tablename__ = 'difficulty_performance_summary'
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'))
+    difficulty = Column(String)
+    correct_count = Column(Integer)
+    total_count = Column(Integer)
+    last_updated = Column(DateTime)
 
-    Table: student_performance_summary
-        # id: INTEGER (PK)
-        # student_id: INTEGER (FK → students)
-        # track_id: INTEGER (FK → tracks)
-        # total_attempts: INTEGER
-        # passed_levels: INTEGER
-        # avg_percentage: FLOAT
-        # last_updated: TIMESTAMP
-    """
-    pass
-
-
-class DomainPerformanceSummary:
-    """
-    Aggregated per-track performance metrics (across all students).
-
-    Table: domain_performance_summary
-        # id: INTEGER (PK)
-        # track_id: INTEGER (FK → tracks)
-        # total_students: INTEGER
-        # avg_pass_rate: FLOAT
-        # last_updated: TIMESTAMP
-    """
-    pass
-
-
-class SemesterProgressSummary:
-    """
-    Per-student progress aggregated by academic year.
-
-    Table: semester_progress_summary
-        # id: INTEGER (PK)
-        # student_id: INTEGER (FK → students)
-        # academic_year_id: INTEGER (FK → academic_years)
-        # levels_completed: INTEGER
-        # last_updated: TIMESTAMP
-    """
-    pass
-
-
-class TopicGapSummary:
-    """
-    Per-student per-topic accuracy summary for skill gap identification.
-
-    Table: topic_gap_summary
-        # id: INTEGER (PK)
-        # student_id: INTEGER (FK → students)
-        # topic_id: INTEGER (FK → topics)
-        # avg_accuracy: FLOAT
-        # attempt_count: INTEGER
-        # last_updated: TIMESTAMP
-    """
-    pass
-
-
-class DifficultyPerformanceSummary:
-    """
-    Per-student accuracy broken down by difficulty level.
-    Read by ai_engine/difficulty.py to compute target difficulty.
-
-    Table: difficulty_performance_summary
-        # id: INTEGER (PK)
-        # student_id: INTEGER (FK → students)
-        # difficulty: VARCHAR
-        # correct_count: INTEGER
-        # total_count: INTEGER
-        # last_updated: TIMESTAMP
-    """
-    pass
-
-
-class DashboardWidgetCache:
-    """
-    Cached computed values for dashboard widgets to avoid expensive real-time queries.
-
-    Table: dashboard_widget_cache
-        # id: INTEGER (PK)
-        # widget_key: VARCHAR
-        # payload: JSONB
-        # cached_at: TIMESTAMP
-        # expires_at: TIMESTAMP
-    """
-    pass
+class DashboardWidgetCache(Base):
+    __tablename__ = 'dashboard_widget_cache'
+    id = Column(Integer, primary_key=True)
+    widget_key = Column(String)
+    payload = Column(JSON)
+    cached_at = Column(DateTime)
+    expires_at = Column(DateTime)

@@ -15,8 +15,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
-
-from app.modules.slots.models import BookingStatus, SlotStatus
+from app.modules.slots.models import SlotStatus, BookingStatus
 
 
 # ── Admin request schemas ──────────────────────────────────────────────────────

@@ -1,67 +1,24 @@
-"""
-app/core/audit.py
------------------
-Shared AuditLog model and helper for writing audit entries.
+import logging
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy.orm import relationship
+from app.core.database import Base
+import datetime
 
-This module is intentionally NOT owned by auth/ or secret_code/.
-It is a cross-cutting concern written to by both modules (and potentially others).
+logger = logging.getLogger(__name__)
 
-Table: audit_log
-Columns:
-    # id: INTEGER (PK)
-    # action: VARCHAR
-    # actor_user_id: INTEGER (FK → users)
-    # target_user_id: INTEGER (FK → users)
-    # details: JSONB
-    # ip_address: VARCHAR
-    # created_at: TIMESTAMP
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=True)
+    action = Column(String, index=True)
+    resource_type = Column(String)
+    resource_id = Column(String, nullable=True)
+    details = Column(JSON, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
-Usage:
-    from app.core.audit import write_audit_log
-    await write_audit_log(db, action="SECRET_CODE_REVEALED", actor_user_id=..., ...)
+async def write_audit_log(session, user_id, action, resource_type, resource_id, details=None):
+    logger.info(f"Audit Log - User {user_id} performed {action} on {resource_type} {resource_id}. Details: {details}")
+    log = AuditLog(user_id=user_id, action=action, resource_type=resource_type, resource_id=str(resource_id), details=details)
+    session.add(log)
+    await session.commit()
 
-TODO: Implement write_audit_log() with async DB session.
-TODO: Add index on (actor_user_id, action, created_at) for fast filtering.
-TODO: Hook into secret_code/ reveal endpoints automatically via FastAPI middleware.
-"""
-
-from datetime import datetime, timezone
-
-
-class AuditLog:
-    """
-    Placeholder ORM model for the audit_log table.
-
-    Columns (no SQLAlchemy definitions yet — added during implementation phase):
-        # id: INTEGER (PK)
-        # action: VARCHAR
-        # actor_user_id: INTEGER (FK → users)
-        # target_user_id: INTEGER (FK → users)
-        # details: JSONB
-        # ip_address: VARCHAR
-        # created_at: TIMESTAMP
-    """
-    pass
-
-
-async def write_audit_log(
-    db,  # AsyncSession — typed loosely to avoid circular imports
-    *,
-    action: str,
-    actor_user_id: int,
-    target_user_id: int | None = None,
-    details: dict | None = None,
-    ip_address: str | None = None,
-) -> None:
-    """
-    Persist a single audit log entry to the audit_log table.
-
-    Called by:
-    - secret_code/ service: every time a code is decrypted/printed (admin).
-    - auth/ service: on failed logins and lockouts.
-
-    TODO: Construct and insert an AuditLog ORM instance.
-    TODO: Flush (not commit) so the log entry is part of the same transaction.
-    """
-    # TODO: implement
-    pass
