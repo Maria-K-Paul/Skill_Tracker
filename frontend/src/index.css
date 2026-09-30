@@ -3,6 +3,12 @@
 
 @layer base {
   body {
-    @apply bg-background text-gray-900 antialiased font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Smooth scrolling and transitions */
+  * {
+    @apply transition-colors duration-200 ease-in-out;
   }
 }
+

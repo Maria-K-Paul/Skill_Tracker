@@ -1,54 +1,108 @@
-import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./lib/auth";
+import { useAuth } from "./hooks/useAuth";
+import { AppShell } from "./components/layout/AppShell";
 
-function App() {
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-surface shadow-sm sticky top-0 z-10 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center">
-              <span className="text-xl font-semibold text-primary">Skill Leveling Platform</span>
-            </div>
-            <nav className="flex space-x-8">
-              <a href="#" className="text-gray-900 font-medium hover:text-primary transition-colors">Domains</a>
-              <a href="#" className="text-gray-500 hover:text-primary transition-colors">My Progress</a>
-              <a href="#" className="text-gray-500 hover:text-primary transition-colors">Dashboard</a>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <button className="text-sm font-medium text-gray-700 hover:text-primary">Sign In</button>
-              <button className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium shadow hover:bg-blue-800 transition-colors">Register</button>
-            </div>
-          </div>
-        </div>
-      </header>
+// Pages
+import { Login } from "./pages/Login";
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Level Up Your Skills</h1>
-          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-            Book exams, validate your knowledge, and progress through expert-curated skill tracks.
-          </p>
-        </div>
+// Student
+import { StudentDashboard } from "./pages/student/Dashboard";
+import { LevelRoadmap } from "./pages/student/LevelRoadmap";
+import { TestPrep } from "./pages/student/TestPrep";
+import { SlotBooking } from "./pages/student/SlotBooking";
+import { UpcomingTest } from "./pages/student/UpcomingTest";
+import { ExamTaker } from "./pages/student/ExamTaker";
+import { ExamScreen } from "./pages/student/ExamScreen";
+import { SkillGap } from "./pages/student/SkillGap";
+import { Results } from "./pages/student/Results";
+import { Certificates } from "./pages/student/Certificates";
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="bg-surface rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-32 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-center">
-                <span className="text-4xl">💻</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900">Web Development Track {item}</h3>
-                <p className="mt-2 text-sm text-gray-500">Master HTML, CSS, JavaScript and modern frameworks.</p>
-                <div className="mt-4">
-                  <button className="text-primary font-medium text-sm hover:underline">View Levels &rarr;</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
-  )
+// Invigilator
+import { KeyIssue } from "./pages/invigilator/KeyIssue";
+import { ActiveExamsMonitor } from "./pages/invigilator/ActiveExamsMonitor";
+
+// Track Owner
+import { EnrolledStudents } from "./pages/track-owner/EnrolledStudents";
+import { LevelsList } from "./pages/track-owner/LevelsList";
+import { QuestionGeneratorPrompt } from "./pages/track-owner/QuestionGeneratorPrompt";
+import { QuestionReviewApprove } from "./pages/track-owner/QuestionReviewApprove";
+import { DifficultyConfig } from "./pages/track-owner/DifficultyConfig";
+import { TestScheduling } from "./pages/track-owner/TestScheduling";
+import { DomainAnalytics } from "./pages/track-owner/DomainAnalytics";
+
+// Admin
+import { StudentDirectory } from "./pages/admin/StudentDirectory";
+import { Analytics } from "./pages/admin/Analytics";
+import { DomainSemesterStats } from "./pages/admin/DomainSemesterStats";
+import { SkillGapOverview } from "./pages/admin/SkillGapOverview";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { KeyGeneration } from "./pages/admin/KeyGeneration";
+import { InvigilatorManagement } from "./pages/admin/InvigilatorManagement";
+import { UserDetails } from "./pages/admin/UserDetails";
+import { AuditLog } from "./pages/admin/AuditLog";
+import { SystemSettings } from "./pages/admin/SystemSettings";
+
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/login" replace />; // Basic fallback
+  
+  // Exam screen has no shell (fullscreen)
+  const isExam = window.location.pathname.includes('/exam') && !window.location.pathname.includes('/exam-taker');
+  if (isExam) return <>{children}</>;
+  
+  return <AppShell>{children}</AppShell>;
 }
 
-export default App
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          
+          {/* Student Routes */}
+          <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
+          <Route path="/student/roadmap" element={<ProtectedRoute allowedRoles={['student']}><LevelRoadmap /></ProtectedRoute>} />
+          <Route path="/student/prep" element={<ProtectedRoute allowedRoles={['student']}><TestPrep /></ProtectedRoute>} />
+          <Route path="/student/book-slot" element={<ProtectedRoute allowedRoles={['student']}><SlotBooking /></ProtectedRoute>} />
+          <Route path="/student/upcoming-test" element={<ProtectedRoute allowedRoles={['student']}><UpcomingTest /></ProtectedRoute>} />
+          <Route path="/student/exam-taker" element={<ProtectedRoute allowedRoles={['student']}><ExamTaker /></ProtectedRoute>} />
+          <Route path="/student/exam" element={<ProtectedRoute allowedRoles={['student']}><ExamScreen /></ProtectedRoute>} />
+          <Route path="/student/skill-gap" element={<ProtectedRoute allowedRoles={['student']}><SkillGap /></ProtectedRoute>} />
+          <Route path="/student/results" element={<ProtectedRoute allowedRoles={['student']}><Results /></ProtectedRoute>} />
+          <Route path="/student/certificates" element={<ProtectedRoute allowedRoles={['student']}><Certificates /></ProtectedRoute>} />
+
+          {/* Invigilator Routes */}
+          <Route path="/invigilator/issue-key" element={<ProtectedRoute allowedRoles={['invigilator']}><KeyIssue /></ProtectedRoute>} />
+          <Route path="/invigilator/monitor" element={<ProtectedRoute allowedRoles={['invigilator']}><ActiveExamsMonitor /></ProtectedRoute>} />
+
+          {/* Track Owner Routes */}
+          <Route path="/track-owner/analytics" element={<ProtectedRoute allowedRoles={['track_owner']}><DomainAnalytics /></ProtectedRoute>} />
+          <Route path="/track-owner/students" element={<ProtectedRoute allowedRoles={['track_owner']}><EnrolledStudents /></ProtectedRoute>} />
+          <Route path="/track-owner/levels" element={<ProtectedRoute allowedRoles={['track_owner']}><LevelsList /></ProtectedRoute>} />
+          <Route path="/track-owner/generator" element={<ProtectedRoute allowedRoles={['track_owner']}><QuestionGeneratorPrompt /></ProtectedRoute>} />
+          <Route path="/track-owner/review" element={<ProtectedRoute allowedRoles={['track_owner']}><QuestionReviewApprove /></ProtectedRoute>} />
+          <Route path="/track-owner/config" element={<ProtectedRoute allowedRoles={['track_owner']}><DifficultyConfig /></ProtectedRoute>} />
+          <Route path="/track-owner/schedule" element={<ProtectedRoute allowedRoles={['track_owner']}><TestScheduling /></ProtectedRoute>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/directory" element={<ProtectedRoute allowedRoles={['admin']}><StudentDirectory /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><Analytics /></ProtectedRoute>} />
+          <Route path="/admin/stats" element={<ProtectedRoute allowedRoles={['admin']}><DomainSemesterStats /></ProtectedRoute>} />
+          <Route path="/admin/gaps" element={<ProtectedRoute allowedRoles={['admin']}><SkillGapOverview /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><UserManagement /></ProtectedRoute>} />
+          <Route path="/admin/keys" element={<ProtectedRoute allowedRoles={['admin']}><KeyGeneration /></ProtectedRoute>} />
+          <Route path="/admin/invigilator" element={<ProtectedRoute allowedRoles={['admin']}><InvigilatorManagement /></ProtectedRoute>} />
+          <Route path="/admin/details" element={<ProtectedRoute allowedRoles={['admin']}><UserDetails /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute allowedRoles={['admin']}><AuditLog /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SystemSettings /></ProtectedRoute>} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
