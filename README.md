@@ -17,6 +17,8 @@ Students enroll in tracks (domains), progress through levels, and book exam slot
 
 ## Quick Start
 
+**IMPORTANT**: Before running this project locally, please read [docs/neon_setup.md](docs/neon_setup.md) for the required database setup steps using Neon.
+
 ```bash
 cp .env.example .env
 # Fill in your secrets in .env

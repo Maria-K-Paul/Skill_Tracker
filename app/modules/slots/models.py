@@ -4,11 +4,14 @@ from app.core.database import Base
 from enum import Enum
 
 class SlotStatus(str, Enum):
+    DRAFT = "draft"
     OPEN = "open"
     CLOSED = "closed"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 class BookingStatus(str, Enum):
-    ACTIVE = "active"
+    BOOKED = "booked"
     CANCELLED = "cancelled"
 
 class Slot(Base):

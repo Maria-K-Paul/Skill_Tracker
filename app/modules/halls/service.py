@@ -5,34 +5,60 @@ Business logic for hall CRUD (admin only).
 
 Cross-module calls: allocation/service reads hall capacity via this service.
 Does NOT import other module models.py or router.py.
-
-TODO: implement create_hall(name, location, capacity) → Hall
-TODO: implement get_hall(hall_id) → Hall
-TODO: implement list_halls() → list[Hall]
-TODO: implement update_hall(hall_id, data) → Hall
-TODO: implement get_hall_capacity(hall_id) → int
 """
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-async def create_hall(name: str, location: str, capacity: int) -> dict:
+from app.core.exceptions import NotFound
+from app.modules.halls.models import Hall
+
+
+async def create_hall(db: AsyncSession, name: str, location: str, capacity: int) -> Hall:
     """Create a new hall. Admin only."""
-    # TODO: insert into halls table
-    pass
+    hall = Hall(name=name, location=location, capacity=capacity)
+    db.add(hall)
+    await db.flush()
+    await db.refresh(hall)
+    return hall
 
 
-async def get_hall(hall_id: int) -> dict:
+async def get_hall(db: AsyncSession, hall_id: int) -> Hall:
     """Return hall by ID. Raises NotFoundError if missing."""
-    # TODO: query halls by id
-    pass
+    hall = await db.get(Hall, hall_id)
+    if hall is None:
+        raise NotFound("HALL_NOT_FOUND", f"Hall {hall_id} not found.")
+    return hall
 
 
-async def list_halls() -> list:
+async def list_halls(db: AsyncSession) -> list[Hall]:
     """Return all halls."""
-    # TODO: query halls table
-    return []
+    result = await db.execute(select(Hall).order_by(Hall.id))
+    return list(result.scalars().all())
 
 
-async def get_hall_capacity(hall_id: int) -> int:
+async def update_hall(db: AsyncSession, hall_id: int, name: str | None = None, location: str | None = None, capacity: int | None = None) -> Hall:
+    """Update hall details."""
+    hall = await get_hall(db, hall_id)
+    if name is not None:
+        hall.name = name
+    if location is not None:
+        hall.location = location
+    if capacity is not None:
+        hall.capacity = capacity
+    await db.flush()
+    await db.refresh(hall)
+    return hall
+
+
+async def delete_hall(db: AsyncSession, hall_id: int) -> None:
+    """Delete a hall."""
+    hall = await get_hall(db, hall_id)
+    await db.delete(hall)
+    await db.flush()
+
+
+async def get_hall_capacity(db: AsyncSession, hall_id: int) -> int:
     """Return the capacity of a specific hall."""
-    # TODO: query halls.capacity
-    return 0
+    hall = await get_hall(db, hall_id)
+    return hall.capacity

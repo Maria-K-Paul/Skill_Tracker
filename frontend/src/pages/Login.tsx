@@ -22,63 +22,61 @@ export function Login() {
     setError("");
 
     try {
-      // Mocking API call for demo since backend might not be up
-      // const res = await api.post("/auth/login", { email, password });
-      // login(res.data.access_token, res.data.refresh_token);
-      
-      // MOCK LOGIN LOGIC:
-      const savedUsersStr = localStorage.getItem("mockUsers");
-      let foundUser = null;
-      if (savedUsersStr) {
-        const users = JSON.parse(savedUsersStr);
-        foundUser = users.find((u: any) => u.email === email && u.status === "active");
+      console.log("Attempting login with:", email);
+
+      // Call real backend authentication
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const res = await api.post("/auth/login", formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      console.log("Login response:", res.data);
+
+      if (!res.data.access_token || !res.data.user) {
+        setError("Invalid response from server");
+        setLoading(false);
+        return;
       }
 
-      let role, name, domain, sub;
-      if (foundUser) {
-        role = foundUser.role;
-        name = foundUser.name;
-        domain = foundUser.domain;
-        sub = foundUser.id; // use ID for sub so user history is tied to ID
-      } else {
-        // Fallback for demo emails
-        const roleMap: Record<string, string> = {
-          "student": "student",
-          "invigilator": "invigilator",
-          "track": "track_owner",
-          "admin": "admin"
-        };
-        
-        const roleKey = Object.keys(roleMap).find(k => email.includes(k)) || "student";
-        role = roleMap[roleKey];
-        name = email.split('@')[0];
-        domain = role === "track_owner" ? "Full Stack" : undefined;
-        sub = email; // Fallback to email
-      }
-      
-      // Create a fake JWT token payload
-      const payload = {
-        sub: sub,
-        role: role,
-        name: name,
-        domain: domain,
-        semester: 3,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60)
-      };
-      
-      const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + btoa(JSON.stringify(payload)) + ".signature";
-      
-      login(fakeToken, "fake-refresh");
+      login(res.data.access_token, res.data.refresh_token);
 
-      switch (role) {
-        case "student": navigate("/student/dashboard"); break;
-        case "invigilator": navigate("/invigilator/issue-key"); break;
-        case "track_owner": navigate("/track-owner/students"); break;
-        case "admin": navigate("/admin/directory"); break;
-        default: navigate("/");
+      // Navigate based on user role from backend
+      const roles = res.data.user.roles || [];
+      console.log("User roles:", roles);
+
+      const primaryRole = roles.length > 0 ? roles[0] : "";
+      console.log("Primary role:", primaryRole);
+
+      switch (primaryRole) {
+        case "student":
+          navigate("/student/dashboard");
+          break;
+        case "invigilator":
+          navigate("/invigilator/issue-key");
+          break;
+        case "track_owner":
+        case "fullstack_domain_owner":
+        case "cyber_domain_owner":
+        case "cloud_devops_domain_owner":
+        case "ml_domain_owner":
+          navigate("/track-owner/students");
+          break;
+        case "admin":
+          navigate("/admin/directory");
+          break;
+        default:
+          console.log("Unknown role, redirecting to home");
+          navigate("/");
       }
-    } catch (err) {
-      setError("Invalid credentials");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      console.error("Error response:", err.response);
+      setError(err.response?.data?.detail || err.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }

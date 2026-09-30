@@ -1,23 +1,22 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { 
-  LayoutDashboard, BookOpen, Clock, Award, 
-  Users, Key, Activity, Settings, List, Shield, UserPlus, 
-  Calendar, FileText, Target, BarChart2
+import {
+  LayoutDashboard, BookOpen, Clock, Award,
+  Users, Key, Activity, Settings, List, Shield, UserPlus,
+  Calendar, FileText, Target, BarChart2, UserX
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-export function Sidebar() {
+export function Sidebar({ isCollapsed }: { isCollapsed?: boolean }) {
   const { user } = useAuth();
   
-  // Conditionally include Level Roadmap if a domain is selected
   const studentLinks = [
-    { to: "/student/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/student/dashboard", icon: LayoutDashboard, label: "My Tracks" },
     ...(user?.domain ? [{ to: "/student/roadmap", icon: Target, label: "Level Roadmap" }] : []),
-    { to: "/student/upcoming-test", icon: Calendar, label: "Upcoming Test" },
-    { to: "/student/exam-taker", icon: Key, label: "Exam Taker" },
+    { to: "/student/upcoming-test", icon: Calendar, label: "Book Exam" },
+    { to: "/student/exam-taker", icon: Key, label: "My Bookings" },
     { to: "/student/skill-gap", icon: BarChart2, label: "Skill Gap" },
-    { to: "/student/results", icon: FileText, label: "View Result" },
+    { to: "/student/results", icon: FileText, label: "My Results" },
     { to: "/student/certificates", icon: Award, label: "Certificates" },
   ];
 
@@ -33,12 +32,13 @@ export function Sidebar() {
   ];
 
   const adminLinks = [
-    { to: "/admin/analytics", icon: Activity, label: "Analytics" },
-    { to: "/admin/users", icon: UserPlus, label: "User Management" },
-    { to: "/admin/keys", icon: Key, label: "Exam Key" },
-    { to: "/admin/invigilator", icon: Shield, label: "Invigilator" },
-    { to: "/admin/details", icon: Users, label: "Details" },
-    { to: "/admin/settings", icon: Settings, label: "Settings" },
+    { to: "/admin/directory", icon: Users, label: "Students" },
+    { to: "/admin/create-accounts", icon: UserPlus, label: "Add Users" },
+    { to: "/admin/account-status", icon: UserX, label: "Account Status" },
+    { to: "/admin/settings", icon: Settings, label: "Halls & Slots" },
+    { to: "/admin/keys", icon: Key, label: "Key Generation" },
+    { to: "/admin/analytics", icon: BarChart2, label: "Analytics" },
+    { to: "/admin/audit", icon: FileText, label: "Audit Logs" },
   ];
 
   let links: { to: string, icon: any, label: string }[] = [];
@@ -48,27 +48,39 @@ export function Sidebar() {
   if (user?.role === "admin") links = adminLinks;
 
   return (
-    <div className="flex w-64 flex-col border-r bg-secondary text-secondary-foreground">
-      <div className="flex h-16 items-center px-6 border-b border-secondary-foreground/10">
-        <Shield className="mr-2 h-6 w-6 text-primary" />
-        <span className="text-xl font-bold tracking-tight">SkillTrack</span>
-      </div>
-      <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+    <div className={cn("flex flex-col bg-secondary transition-all duration-200 ease-out h-[calc(100vh-56px)]", isCollapsed ? "w-[72px]" : "w-[240px]")}>
+      <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
         {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
+            title={isCollapsed ? link.label : undefined}
             className={({ isActive }) =>
               cn(
-                "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "relative flex items-center rounded-lg transition-colors",
+                isCollapsed ? "flex-col justify-center px-1 py-3" : "px-3 py-2.5",
                 isActive 
-                  ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-secondary-foreground/10"
+                  ? "bg-secondary text-primary font-medium" 
+                  : "text-primary hover:bg-[#F2F2F2]"
               )
             }
           >
-            <link.icon className="mr-3 h-5 w-5" />
-            {link.label}
+            {({ isActive }) => (
+              <>
+                {isActive && !isCollapsed && (
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent rounded-r-full" />
+                )}
+                <div className={cn("relative flex items-center justify-center", isCollapsed ? "mb-1" : "mr-4")}>
+                  <link.icon className={cn("h-6 w-6", isActive ? "text-primary" : "text-muted")} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+                <span className={cn(
+                  isCollapsed ? "text-[10px] text-center w-full truncate leading-tight" : "text-sm flex-1",
+                  isActive && !isCollapsed ? "font-medium" : "font-normal text-muted"
+                )}>
+                  {link.label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

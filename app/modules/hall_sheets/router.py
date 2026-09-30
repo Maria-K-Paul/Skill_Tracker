@@ -21,6 +21,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -91,4 +92,45 @@ async def get_printable_hall_sheet(
 
     return schemas.HallSheetPrintResponse(
         slot_id=slot_id, hall_id=hall_id, rows=rows
+    )
+
+
+@router.get(
+    "/{slot_id}/{hall_id}/download-pdf",
+    summary="Download hall sheet PDF with secret codes (admin, audited)",
+)
+async def download_hall_sheet_pdf(
+    slot_id: uuid.UUID,
+    hall_id: uuid.UUID,
+    current_admin: dict = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Download a PDF hall sheet for a specific hall, including secret codes.
+
+    AUDIT: One audit log entry is written per student row.
+    """
+    admin_id = (
+        current_admin["id"]
+        if isinstance(current_admin["id"], uuid.UUID)
+        else uuid.UUID(str(current_admin["id"]))
+    )
+
+    pdf_buffer = await service.generate_hall_sheet_pdf(
+        slot_id=slot_id,
+        hall_id=hall_id,
+        revealed_by_user_id=admin_id,
+        db=db,
+    )
+    await db.commit()
+
+    # Return PDF as downloadable file
+    headers = {
+        'Content-Disposition': f'attachment; filename="hall_sheet_{hall_id}_{slot_id}.pdf"'
+    }
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type='application/pdf',
+        headers=headers
     )

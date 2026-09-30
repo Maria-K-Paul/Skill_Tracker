@@ -42,6 +42,8 @@ import { InvigilatorManagement } from "./pages/admin/InvigilatorManagement";
 import { UserDetails } from "./pages/admin/UserDetails";
 import { AuditLog } from "./pages/admin/AuditLog";
 import { SystemSettings } from "./pages/admin/SystemSettings";
+import { CreateAccounts } from "./pages/admin/CreateAccounts";
+import { AccountStatus } from "./pages/admin/AccountStatus";
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, isLoading } = useAuth();
@@ -96,11 +98,13 @@ export default function App() {
           <Route path="/admin/stats" element={<ProtectedRoute allowedRoles={['admin']}><DomainSemesterStats /></ProtectedRoute>} />
           <Route path="/admin/gaps" element={<ProtectedRoute allowedRoles={['admin']}><SkillGapOverview /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><UserManagement /></ProtectedRoute>} />
+          <Route path="/admin/create-accounts" element={<ProtectedRoute allowedRoles={['admin']}><CreateAccounts /></ProtectedRoute>} />
+          <Route path="/admin/account-status" element={<ProtectedRoute allowedRoles={['admin']}><AccountStatus /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SystemSettings /></ProtectedRoute>} />
           <Route path="/admin/keys" element={<ProtectedRoute allowedRoles={['admin']}><KeyGeneration /></ProtectedRoute>} />
           <Route path="/admin/invigilator" element={<ProtectedRoute allowedRoles={['admin']}><InvigilatorManagement /></ProtectedRoute>} />
           <Route path="/admin/details" element={<ProtectedRoute allowedRoles={['admin']}><UserDetails /></ProtectedRoute>} />
           <Route path="/admin/audit" element={<ProtectedRoute allowedRoles={['admin']}><AuditLog /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SystemSettings /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

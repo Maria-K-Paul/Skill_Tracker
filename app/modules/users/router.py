@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.core.dependencies import AdminUser, Client, DbSession, require_admin
+from app.core.dependencies import AdminUser, Client, DbSession, DomainOwnerOrAdmin, require_admin
 from app.modules.auth.models import RoleName
 from app.modules.users import service as user_service
 from app.modules.users.schemas import (
@@ -18,6 +18,8 @@ from app.modules.users.schemas import (
     AdminUpdateUserRequest,
     AdminUserOut,
     AuditLogOut,
+    CreateStudentRequest,
+    CreateStudentResponse,
     DepartmentCreate,
     DepartmentOut,
     Page,
@@ -72,6 +74,31 @@ async def create_user(
     """
     user, temporary_password = await user_service.create_staff_user(db, data, admin, client)
     return AdminCreateUserResponse(user=AdminUserOut.model_validate(user), temporary_password=temporary_password)
+
+
+@router.post("/students", response_model=CreateStudentResponse, status_code=status.HTTP_201_CREATED, dependencies=[])
+async def create_student(
+    data: CreateStudentRequest, creator: DomainOwnerOrAdmin, db: DbSession, client: Client
+) -> CreateStudentResponse:
+    """Create a student account. Accessible to both admin and domain owners.
+
+    Required fields:
+    - username: unique username for the student
+    - email: unique email address
+    - full_name: student's full name
+    - password: initial password (student sets this)
+    - department_id: ID of the student's department
+    - curr_sem: current semester (1-10)
+    - reg_num: university registration number
+
+    Optional fields:
+    - phone: contact phone number
+    - roll_number: roll number
+    - academic_year_id: academic year ID
+    - account_expires_at: account expiration date
+    """
+    user = await user_service.create_student_account(db, data, creator, client)
+    return CreateStudentResponse(user=AdminUserOut.model_validate(user))
 
 
 @router.get("/{user_id}", response_model=AdminUserOut)

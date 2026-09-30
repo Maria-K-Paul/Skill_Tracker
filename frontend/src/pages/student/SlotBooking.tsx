@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { CardSkeleton } from "../../components/ui/skeleton";
 
 export function SlotBooking() {
   const { user } = useAuth();
@@ -44,20 +45,30 @@ export function SlotBooking() {
       />
 
       {isLoading ? (
-        <div>Loading slots...</div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+      ) : !slots || slots.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <Calendar className="h-16 w-16 text-muted" strokeWidth={1} />
+          <p className="text-muted text-sm">No open slots available for this test currently.</p>
+          <Button variant="default" onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {slots?.map(slot => (
-            <Card key={slot.id} className={`transition-all ${slot.availableSeats === 0 ? 'opacity-50' : 'cursor-pointer hover:border-primary'} ${selectedSlot === slot.id ? 'ring-2 ring-primary ring-offset-2' : ''}`} onClick={() => slot.availableSeats > 0 && setSelectedSlot(slot.id)}>
-              <CardContent className="p-5 text-center">
-                <div className="mb-2 text-xl font-bold">
+          {slots.map(slot => (
+            <Card key={slot.id} className={`transition-all ${slot.availableSeats === 0 ? 'opacity-50' : 'cursor-pointer'} ${selectedSlot === slot.id ? 'ring-2 ring-accent ring-offset-2' : ''}`} onClick={() => slot.availableSeats > 0 && setSelectedSlot(slot.id)}>
+              <CardContent className="p-5 text-center flex flex-col items-center justify-center h-32">
+                <div className="mb-1 text-[16px] font-medium text-primary">
                   {format(new Date(slot.date), 'MMM dd')}
                 </div>
-                <div className="mb-4 text-lg font-medium text-primary">
+                <div className="mb-2 text-[14px] font-medium text-muted">
                   {slot.time}
                 </div>
-                <div className="space-y-2 text-sm text-muted-foreground flex justify-center">
-                  <div className="flex items-center"><Users className="mr-2 h-4 w-4" /> {slot.availableSeats} / {slot.totalSeats} seats left</div>
+                <div className="text-[12px] text-muted flex items-center justify-center">
+                  <Users className="mr-1.5 h-3.5 w-3.5" /> {slot.availableSeats} / {slot.totalSeats} seats
                 </div>
               </CardContent>
             </Card>

@@ -7,12 +7,46 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#1E3A8A", // Deep Indigo/Navy
-        background: "#FAFAFA", // Off-white
-        surface: "#FFFFFF",
+        background: "#FFFFFF",
+        surface: "#F9F9F9",
+        border: "rgba(0,0,0,0.1)",
+        primary: {
+          DEFAULT: "#0F0F0F",
+          foreground: "#FFFFFF",
+        },
+        secondary: {
+          DEFAULT: "#F9F9F9",
+          foreground: "#0F0F0F",
+        },
+        muted: {
+          DEFAULT: "#606060",
+          foreground: "#FFFFFF",
+        },
+        accent: {
+          DEFAULT: "#FF0000",
+          foreground: "#FFFFFF",
+        },
+        destructive: {
+          DEFAULT: "#FF0000",
+          foreground: "#FFFFFF",
+        },
+        success: {
+          DEFAULT: "#2BA640",
+          foreground: "#FFFFFF",
+        },
+        warning: {
+          DEFAULT: "#E8A33D",
+          foreground: "#FFFFFF",
+        },
+        ring: "#FF0000",
       },
       fontFamily: {
-        sans: ['"Inter"', 'sans-serif'],
+        sans: ['"Roboto"', 'sans-serif'],
+      },
+      borderRadius: {
+        lg: "8px",
+        md: "8px",
+        sm: "4px",
       }
     },
   },

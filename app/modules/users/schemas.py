@@ -112,6 +112,7 @@ class UserOut(ORMModel):
     must_change_password: bool
     created_at: datetime
     last_login_at: datetime | None
+    account_expires_at: datetime | None
 
 
 class UserDetailOut(UserOut):
@@ -189,6 +190,31 @@ class AdminCreateUserResponse(BaseModel):
         default=None,
         description="Shown only once. Give it to the user; they must change it when they first log in.",
     )
+
+
+class CreateStudentRequest(BaseModel):
+    """Request body for creating a student account (accessible to admin and domain owners)."""
+    username: Username
+    email: Email
+    full_name: FullName
+    phone: Phone | None = None
+    password: Password
+    department_id: int = Field(gt=0, description="Department the student belongs to")
+    curr_sem: Semester
+    reg_num: RegNum
+    roll_number: RollNumber | None = None
+    academic_year_id: int | None = Field(default=None, gt=0)
+    account_expires_at: datetime | None = Field(default=None, description="Account expiration date (optional)")
+
+    @model_validator(mode="after")
+    def check_values(self) -> "CreateStudentRequest":
+        if self.account_expires_at and self.account_expires_at < datetime.now():
+            raise ValueError("account_expires_at must be in the future")
+        return self
+
+
+class CreateStudentResponse(BaseModel):
+    user: AdminUserOut
 
 
 class AdminUpdateUserRequest(BaseModel):

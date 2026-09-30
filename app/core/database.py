@@ -17,7 +17,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import DateTime, event
+from sqlalchemy import DateTime, event, pool
 from sqlalchemy.engine import Dialect, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -67,16 +67,21 @@ def create_engine_for(url: str) -> AsyncEngine:
 
         return sqlite_engine
 
+    # NullPool and statement_cache disabling are required with Neon + PgBouncer 
+    # transaction-mode pooling to avoid "prepared statement already exists" errors 
+    # and double-pooling.
     return create_async_engine(
         url,
         echo=settings.debug,
-        pool_size=settings.db_pool_size,
-        max_overflow=settings.db_max_overflow,
-        pool_timeout=settings.db_pool_timeout_seconds,
-        pool_pre_ping=True,  # drop connections the database (or PgBouncer) closed
-        pool_recycle=1800,
+        poolclass=pool.NullPool,
         # Work in UTC inside the database; the frontend converts to IST for display.
-        connect_args={"server_settings": {"timezone": "UTC"}},
+        # Disabling asyncpg's client-side prepared statement cache is required for PgBouncer.
+        connect_args={
+            "server_settings": {"timezone": "UTC"},
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+            "ssl": "require"
+        },
     )
 
 

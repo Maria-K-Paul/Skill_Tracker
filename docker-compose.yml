@@ -1,26 +1,14 @@
+# Postgres is now hosted on Neon.
+# Each developer connects via their own .env, not a local container.
 version: "3.9"
 
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: skill_user
-      POSTGRES_PASSWORD: skill_pass
-      POSTGRES_DB: skill_leveling_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   api:
     build: .
     restart: unless-stopped
     env_file: .env
     ports:
       - "8000:8000"
-    depends_on:
-      - db
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
@@ -31,6 +19,3 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-
-volumes:
-  postgres_data:
