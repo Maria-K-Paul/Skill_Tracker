@@ -9,6 +9,7 @@ export default {
       colors: {
         primary: "#1E3A8A", // Deep Indigo/Navy
         background: "#FAFAFA", // Off-white
+        foreground: "#1F2937",
         surface: "#FFFFFF",
       },
       fontFamily: {

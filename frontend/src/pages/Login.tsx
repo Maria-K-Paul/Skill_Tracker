@@ -22,63 +22,33 @@ export function Login() {
     setError("");
 
     try {
-      // Mocking API call for demo since backend might not be up
-      // const res = await api.post("/auth/login", { email, password });
-      // login(res.data.access_token, res.data.refresh_token);
-      
-      // MOCK LOGIN LOGIC:
-      const savedUsersStr = localStorage.getItem("mockUsers");
-      let foundUser = null;
-      if (savedUsersStr) {
-        const users = JSON.parse(savedUsersStr);
-        foundUser = users.find((u: any) => u.email === email && u.status === "active");
-      }
+      const form = new URLSearchParams();
+      form.append("username", email);
+      form.append("password", password);
 
-      let role, name, domain, sub;
-      if (foundUser) {
-        role = foundUser.role;
-        name = foundUser.name;
-        domain = foundUser.domain;
-        sub = foundUser.id; // use ID for sub so user history is tied to ID
-      } else {
-        // Fallback for demo emails
-        const roleMap: Record<string, string> = {
-          "student": "student",
-          "invigilator": "invigilator",
-          "track": "track_owner",
-          "admin": "admin"
-        };
-        
-        const roleKey = Object.keys(roleMap).find(k => email.includes(k)) || "student";
-        role = roleMap[roleKey];
-        name = email.split('@')[0];
-        domain = role === "track_owner" ? "Full Stack" : undefined;
-        sub = email; // Fallback to email
-      }
-      
-      // Create a fake JWT token payload
-      const payload = {
-        sub: sub,
-        role: role,
-        name: name,
-        domain: domain,
-        semester: 3,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60)
-      };
-      
-      const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + btoa(JSON.stringify(payload)) + ".signature";
-      
-      login(fakeToken, "fake-refresh");
+      const res = await api.post("/auth/login", form, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+
+      const { access_token, user: userData } = res.data;
+      login(access_token, "cookie");
+
+      const role = userData.roles?.[0] ?? "student";
 
       switch (role) {
         case "student": navigate("/student/dashboard"); break;
         case "invigilator": navigate("/invigilator/issue-key"); break;
-        case "track_owner": navigate("/track-owner/students"); break;
+        case "fullstack_domain_owner":
+        case "cyber_domain_owner":
+        case "cloud_devops_domain_owner":
+        case "ml_domain_owner":
+          navigate("/track-owner/students"); break;
         case "admin": navigate("/admin/directory"); break;
         default: navigate("/");
       }
-    } catch (err) {
-      setError("Invalid credentials");
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail ?? err?.message ?? "Invalid credentials";
+      setError(typeof msg === "string" ? msg : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -95,18 +65,18 @@ export function Login() {
           <CardDescription>
             Enter your credentials to access your portal.
             <br />
-            <span className="text-xs text-muted-foreground mt-2 inline-block">Hint: use 'student@', 'invigilator@', 'track@', 'admin@' in email to mock roles</span>
+            <span className="text-xs text-muted-foreground mt-2 inline-block">Sign in with your username or email and password.</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
-                required 
+              <Label htmlFor="email">Username or Email</Label>
+              <Input
+                id="email"
+                type="text"
+                placeholder="username or email"
+                required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
