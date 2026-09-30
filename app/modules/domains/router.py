@@ -22,6 +22,7 @@ class TopicCreate(BaseModel):
     name: str
     description: str
     sequence_no: int
+    is_optional: bool = False
 
 @router.get("/tracks")
 async def list_tracks(db: AsyncSession = Depends(get_db)):
@@ -59,15 +60,15 @@ async def get_level(level_id: int, db: AsyncSession = Depends(get_db)):
     if not level:
         raise HTTPException(status_code=404, detail="Level not found")
     
-    # Get ordered topics
-    topics_result = await db.execute(select(Topic).where(Topic.level_id == level_id).order_by(Topic.sequence_no))
+    # Get ordered topics that are REQUIRED
+    topics_result = await db.execute(select(Topic).where(Topic.level_id == level_id, Topic.is_optional == False).order_by(Topic.sequence_no))
     topics = topics_result.scalars().all()
     
     return {"level": level, "topics": topics}
 
 @router.post("/levels/{level_id}/topics", dependencies=[Depends(require_admin)])
 async def create_topic(level_id: int, topic: TopicCreate, db: AsyncSession = Depends(get_db)):
-    new_topic = Topic(level_id=level_id, name=topic.name, description=topic.description, sequence_no=topic.sequence_no)
+    new_topic = Topic(level_id=level_id, name=topic.name, description=topic.description, sequence_no=topic.sequence_no, is_optional=topic.is_optional)
     db.add(new_topic)
     await db.commit()
     await db.refresh(new_topic)

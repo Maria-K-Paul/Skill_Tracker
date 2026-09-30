@@ -1,3 +1,5 @@
+# Postgres is now hosted on Neon.
+# Each developer connects via their own .env, not a local container.
 version: "3.9"
 
 services:
@@ -19,8 +21,6 @@ services:
     env_file: .env
     ports:
       - "8000:8000"
-    depends_on:
-      - db
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
@@ -31,6 +31,3 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-
-volumes:
-  postgres_data:

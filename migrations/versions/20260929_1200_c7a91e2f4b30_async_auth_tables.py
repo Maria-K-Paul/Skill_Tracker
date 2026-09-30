@@ -68,12 +68,13 @@ def upgrade() -> None:
 
     op.execute("UPDATE users SET is_active = true WHERE is_active IS NULL")
     op.execute("UPDATE users SET failed_login_count = 0 WHERE failed_login_count IS NULL")
-    op.execute("UPDATE users SET created_at = now() WHERE created_at IS NULL")
+    op.execute("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
     op.execute("UPDATE users SET updated_at = created_at WHERE updated_at IS NULL")
-    op.alter_column('users', 'is_active', existing_type=sa.Boolean(), nullable=False, server_default=sa.text('true'))
-    op.alter_column('users', 'failed_login_count', existing_type=sa.Integer(), nullable=False, server_default=sa.text('0'))
-    _to_timestamptz('users', 'created_at', nullable=False, server_default=sa.text('now()'))
-    _to_timestamptz('users', 'updated_at', nullable=False, server_default=sa.text('now()'))
+    with op.batch_alter_table('users') as batch_op:
+        batch_op.alter_column('is_active', existing_type=sa.Boolean(), nullable=False, server_default=sa.text('1'))
+        batch_op.alter_column('failed_login_count', existing_type=sa.Integer(), nullable=False, server_default=sa.text('0'))
+        batch_op.alter_column('created_at', type_=TIMESTAMPTZ, existing_type=TIMESTAMP, nullable=False, server_default=sa.text('CURRENT_TIMESTAMP'))
+        batch_op.alter_column('updated_at', type_=TIMESTAMPTZ, existing_type=TIMESTAMP, nullable=False, server_default=sa.text('CURRENT_TIMESTAMP'))
 
     # ── roles ──────────────────────────────────────────────────────────────────
     op.add_column('roles', sa.Column('track_id', sa.Integer(), nullable=True))

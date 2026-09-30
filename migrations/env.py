@@ -42,7 +42,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Override the sqlalchemy.url with the value from app settings.
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Alembic must use the direct/unpooled Neon connection string — PgBouncer transaction pooling breaks Alembic's session-level locking.
+config.set_main_option("sqlalchemy.url", settings.database_url_direct)
 
 target_metadata = Base.metadata
 
@@ -72,6 +73,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"ssl": "require"},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

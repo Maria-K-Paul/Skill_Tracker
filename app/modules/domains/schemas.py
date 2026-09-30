@@ -32,6 +32,7 @@ class TopicResponse(BaseModel):
     name: str
     description: str
     sequence_no: int
+    is_optional: bool
 
 
 class SubtopicResponse(BaseModel):

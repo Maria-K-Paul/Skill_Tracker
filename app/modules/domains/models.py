@@ -25,6 +25,7 @@ class Topic(Base):
     name = Column(String)
     description = Column(Text)
     sequence_no = Column(Integer)
+    is_optional = Column(Boolean, default=False)
 
 class Subtopic(Base):
     __tablename__ = 'subtopics'

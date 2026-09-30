@@ -48,6 +48,7 @@ class User(Base):
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     locked_until: Mapped[datetime | None] = mapped_column(UTCDateTime())
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    account_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     user_roles: Mapped[list[UserRole]] = relationship(cascade="all, delete-orphan", lazy="selectin")
     student: Mapped[Optional["Student"]] = relationship(back_populates="user", lazy="raise")

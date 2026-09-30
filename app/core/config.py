@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # ── Database ──────────────────────────────────────────────────────────────
-    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/skill_leveling_db"
+    database_url: str
+    database_url_direct: str
     # Connections per API process = db_pool_size + db_max_overflow. Keep
     # (processes x that number) below PostgreSQL's max_connections, or put PgBouncer in front.
     db_pool_size: int = 10

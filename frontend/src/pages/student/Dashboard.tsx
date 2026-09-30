@@ -142,19 +142,19 @@ export function StudentDashboard() {
       
       <div className="grid gap-6 md:grid-cols-2 mt-8">
         {domains.map((domain) => (
-          <Card key={domain.id} className="flex flex-col overflow-hidden transition-all hover:shadow-md border-2 hover:border-primary/50">
-            <CardHeader className="pb-4 bg-muted/30">
+          <Card key={domain.id} className="flex flex-col overflow-hidden">
+            <CardHeader className="pb-4">
               <div className="flex items-center space-x-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <domain.icon className="h-6 w-6" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E5E5E5] text-primary">
+                  <domain.icon className="h-6 w-6" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">{domain.name}</CardTitle>
-                  <CardDescription className="text-sm mt-1">{domain.desc}</CardDescription>
+                  <CardTitle className="text-[16px] font-medium">{domain.name}</CardTitle>
+                  <CardDescription className="text-[14px] text-muted mt-0.5">{domain.desc}</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col flex-1 p-6">
+            <CardContent className="flex flex-col flex-1 px-6 pb-6">
               <div className="mb-6 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Entrance Test Status:</span>

@@ -17,9 +17,17 @@ Security:
 """
 
 import uuid
+from io import BytesIO
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 from app.modules.allocation.models import Allocation
 from app.modules.hall_sheets.schemas import HallSheetPrintRow, HallSheetRow
@@ -139,3 +147,154 @@ async def get_printable_hall_sheet(
             )
         )
     return print_rows
+
+
+async def generate_hall_sheet_pdf(
+    slot_id: uuid.UUID,
+    hall_id: uuid.UUID,
+    revealed_by_user_id: uuid.UUID,
+    db: AsyncSession,
+) -> BytesIO:
+    """
+    Generate a PDF hall sheet for a specific hall including secret codes.
+
+    Returns a BytesIO buffer containing the PDF that can be sent as a response.
+    """
+    # Get the printable hall sheet data
+    rows = await get_printable_hall_sheet(slot_id, hall_id, revealed_by_user_id, db)
+
+    # Fetch hall and slot details
+    from app.modules.halls.models import Hall
+    from app.modules.slots.models import Slot
+
+    hall = await db.get(Hall, hall_id)
+    slot = await db.get(Slot, slot_id)
+
+    if not hall or not slot:
+        raise ValueError("Hall or Slot not found")
+
+    # Create PDF buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                          rightMargin=30, leftMargin=30,
+                          topMargin=50, bottomMargin=30)
+
+    # Container for the PDF elements
+    elements = []
+
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#0F0F0F'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#606060'),
+        spaceAfter=20,
+        alignment=TA_CENTER
+    )
+
+    # Title
+    title = Paragraph("Exam Hall Sheet", title_style)
+    elements.append(title)
+
+    # Hall and slot information
+    info_text = f"""
+    <b>Hall:</b> {hall.name}<br/>
+    <b>Location:</b> {hall.location}<br/>
+    <b>Capacity:</b> {hall.capacity}<br/>
+    <b>Date:</b> {slot.date if hasattr(slot, 'date') else 'N/A'}<br/>
+    <b>Time:</b> {slot.start_time if hasattr(slot, 'start_time') else 'N/A'} - {slot.end_time if hasattr(slot, 'end_time') else 'N/A'}<br/>
+    <b>Total Students:</b> {len(rows)}
+    """
+    info = Paragraph(info_text, subtitle_style)
+    elements.append(info)
+    elements.append(Spacer(1, 20))
+
+    # Security warning
+    warning_style = ParagraphStyle(
+        'Warning',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.red,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    warning = Paragraph("⚠️ CONFIDENTIAL - Contains Secret Codes - For Invigilator Use Only", warning_style)
+    elements.append(warning)
+    elements.append(Spacer(1, 10))
+
+    # Create table data
+    table_data = [
+        ['Seat No.', 'Student ID', 'Student Name', 'Attempt', 'Secret Code']
+    ]
+
+    for row in rows:
+        table_data.append([
+            str(row.seat_no),
+            str(row.student_id)[:8] + '...',
+            row.student_display_name,
+            str(row.attempt_number),
+            row.secret_code
+        ])
+
+    # Create table
+    table = Table(table_data, colWidths=[0.8*inch, 1.5*inch, 2*inch, 0.9*inch, 1.8*inch])
+
+    # Table style
+    table.setStyle(TableStyle([
+        # Header
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0F0F0F')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+
+        # Body
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#0F0F0F')),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+
+        # Grid
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#0F0F0F')),
+
+        # Alternating row colors
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9F9F9')]),
+    ]))
+
+    elements.append(table)
+
+    # Footer with timestamp
+    elements.append(Spacer(1, 30))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#606060'),
+        alignment=TA_CENTER
+    )
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    footer = Paragraph(f"Generated on {timestamp} | Skill Leveling Platform", footer_style)
+    elements.append(footer)
+
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer

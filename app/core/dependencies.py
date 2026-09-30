@@ -77,6 +77,13 @@ async def get_authenticated_user(db: DbSession, token: Annotated[str | None, Dep
         raise Unauthorized("ACCOUNT_DISABLED", "This account has been deactivated.")
     if payload.get("ver") != user.token_version:
         raise Unauthorized("TOKEN_REVOKED", "This session has ended. Please log in again.")
+
+    # Check if account has expired
+    if user.account_expires_at is not None:
+        from app.utils.time_utils import utcnow
+        if utcnow() > user.account_expires_at:
+            raise Unauthorized("ACCOUNT_EXPIRED", "This account has expired.")
+
     return user
 
 

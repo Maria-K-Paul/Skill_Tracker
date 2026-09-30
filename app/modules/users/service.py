@@ -34,6 +34,7 @@ from app.modules.auth.service import (
 )
 from app.modules.domains.models import Track
 from app.modules.users.models import USER_DETAIL_OPTIONS, AcademicYear, Department, DomainIncharge, Student, User
+from app.modules.users import schemas
 from app.modules.users.schemas import (
     AdminCreateUserRequest,
     AdminUpdateUserRequest,
@@ -122,6 +123,66 @@ async def create_staff_user(
     )
     await db.commit()
     return await get_user(db, user.id), temporary_password
+
+
+async def create_student_account(
+    db: AsyncSession, data: "schemas.CreateStudentRequest", creator: User, client: ClientInfo
+) -> User:
+    """Create a student account. Can be called by both admin and domain owners."""
+    # Verify department exists
+    department = await db.get(Department, data.department_id)
+    if department is None:
+        raise BadRequest("DEPARTMENT_NOT_FOUND", "Department not found.")
+
+    # Verify academic year if provided
+    if data.academic_year_id is not None:
+        academic_year = await db.get(AcademicYear, data.academic_year_id)
+        if academic_year is None:
+            raise BadRequest("ACADEMIC_YEAR_NOT_FOUND", "Academic year not found.")
+
+    # Create user
+    user = new_user(
+        username=data.username,
+        email=data.email,
+        full_name=data.full_name,
+        phone=data.phone,
+        password_hash=await security.hash_password(data.password),
+        must_change_password=False,  # student sets their own password, no need to change
+    )
+
+    # Set account expiration if provided
+    if data.account_expires_at is not None:
+        user.account_expires_at = data.account_expires_at
+
+    # Assign student role
+    student_role = await db.scalar(select(Role).where(Role.name == RoleName.STUDENT))
+    if student_role is None:
+        raise BadRequest("STUDENT_ROLE_NOT_FOUND", "Student role not found.")
+    set_user_roles(user, [student_role])
+
+    # Create student profile
+    student = Student(
+        user=user,
+        department_id=data.department_id,
+        academic_year_id=data.academic_year_id,
+        reg_num=data.reg_num,
+        roll_number=data.roll_number,
+        curr_sem=data.curr_sem,
+    )
+    db.add(user)
+    db.add(student)
+    await flush_or_conflict(db)
+
+    record(
+        db,
+        AuditAction.USER_CREATED,
+        actor_id=creator.id,
+        target_id=user.id,
+        details={"role": "student", "department_id": data.department_id, "reg_num": data.reg_num},
+        ip=client.ip,
+    )
+    await db.commit()
+    return await get_user(db, user.id)
 
 
 async def update_user(

@@ -13,7 +13,12 @@ export default {
         surface: "#FFFFFF",
       },
       fontFamily: {
-        sans: ['"Inter"', 'sans-serif'],
+        sans: ['"Roboto"', 'sans-serif'],
+      },
+      borderRadius: {
+        lg: "8px",
+        md: "8px",
+        sm: "4px",
       }
     },
   },

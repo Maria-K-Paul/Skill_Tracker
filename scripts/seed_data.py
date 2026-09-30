@@ -15,7 +15,7 @@ import sys
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal, engine
+from app.core.database import create_engine_for
 from app.core.security import hash_password
 from app.modules.auth.models import RoleName
 from app.modules.auth.service import ensure_roles, get_roles, new_user, set_user_roles
@@ -28,7 +28,16 @@ async def main() -> None:
         sys.exit("Refusing to create demo accounts in production.")
     print("Seeding database...")
 
-    async with AsyncSessionLocal() as session:
+    from app.core.database import Base
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    direct_engine = create_engine_for(settings.database_url_direct)
+    DirectSessionLocal = async_sessionmaker(direct_engine, expire_on_commit=False, autoflush=False)
+    
+    async with direct_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
+    async with DirectSessionLocal() as session:
         await ensure_roles(session)
 
         # Department & academic year
@@ -95,7 +104,7 @@ async def main() -> None:
             session.add(user)
 
         await session.commit()
-    await engine.dispose()
+    await direct_engine.dispose()
     print("Data seeded successfully!")
 
 
