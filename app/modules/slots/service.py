@@ -278,3 +278,26 @@ async def list_student_bookings(
         select(SlotBooking).where(SlotBooking.student_id == student_id)
     )
     return list(result.scalars().all())
+
+async def get_booking_context(booking_id: int, db: AsyncSession) -> dict:
+    """
+    Return the facts attempts/service.start_exam() needs about a booking:
+    who owns it, its status, and which assessment / time window it is for.
+    Raises NotFoundError if the booking or its slot is missing.
+    """
+    booking = await db.get(SlotBooking, booking_id)
+    if booking is None:
+        raise NotFoundError(f"Booking {booking_id} not found.")
+    slot = await db.get(Slot, booking.slot_id)
+    if slot is None:
+        raise NotFoundError(f"Slot {booking.slot_id} not found.")
+    return {
+        "booking_id": booking.id,
+        "student_id": booking.student_id,
+        "status": getattr(booking.status, "value", booking.status),
+        "attempt_number": booking.attempt_number,
+        "slot_id": slot.id,
+        "assessment_id": slot.assessment_id,
+        "slot_date": slot.date,
+        "slot_end_time": slot.end_time,
+    }

@@ -79,6 +79,21 @@ http://localhost:8000/api/v1
 - `DELETE /slots/student/cancel/{booking_id}`
 - `GET  /slots/student/my-bookings`
 
+### Attempts (Student)
+- `POST /attempts/start` — body `{booking_id, secret_code}`; starts the exam session
+- `GET  /attempts` — my attempts
+- `GET  /attempts/{id}` — attempt with my saved answers
+- `POST /attempts/{id}/answer` — body `{question_id, selected_option_id}`; save / change one answer
+- `POST /attempts/{id}/submit` — finish and score; optional body `{answers: [...]}`
+- `POST /attempts/{id}/heartbeat` — session keep-alive
+- `POST /attempts/{id}/event` — body `{event_type, details}`; proctoring event
+- `GET  /attempts/{id}/result` — result + topic breakdown + progression decision (`advance` / `retry` / `blocked`)
+
+### Progress (Student)
+- `POST /progress/enroll` — body `{track_id}`
+- `GET  /progress/is-eligible/{level_id}` — `{eligible, attempts_used, max_attempts, reason}`
+- `GET  /progress/level/{level_id}` — my level_progress row
+
 ### Hall Sheets (Admin)
 - `GET  /hall-sheets/{slot_id}` — hall-wise list, codes hidden
 - `GET  /hall-sheets/{slot_id}/{hall_id}/print` — printable sheet with codes (audited)

@@ -1,6 +1,5 @@
 
-from sqlalchemy import Column, JSON
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -10,6 +9,11 @@ class Attempt(Base):
     slot_booking_id = Column(Integer, ForeignKey('slot_bookings.id'))
     student_id = Column(Integer, ForeignKey('students.id'))
     assessment_id = Column(Integer, ForeignKey('assessments.id'))
+    # Denormalised copies (added when the assessment service was merged in).
+    # They let us count attempts per level and find the enrollment without
+    # importing the exams / progress models.
+    enrollment_id = Column(Integer, ForeignKey('enrollments.id'), nullable=True)
+    level_id = Column(Integer, ForeignKey('levels.id'), nullable=True)
     attempt_no = Column(Integer)
     started_at = Column(DateTime)
     submitted_at = Column(DateTime)
@@ -31,8 +35,7 @@ class ProctoringEvent(Base):
     exam_session_id = Column(Integer, ForeignKey('exam_sessions.id'))
     event_type = Column(String)
     occurred_at = Column(DateTime)
-    details = Column(JSON)  # JSONB in postgres, but String is safer in sqlalchemy if JSON is not imported, let's use JSON from sqlalchemy
-
+    details = Column(JSON)  # JSONB in postgres
 
 class AttemptAnswer(Base):
     __tablename__ = 'attempt_answers'
@@ -59,4 +62,4 @@ class TopicResult(Base):
     topic_id = Column(Integer, ForeignKey('topics.id'))
     scored_marks = Column(Integer)
     total_marks = Column(Integer)
-    accuracy = Column(Float)
+    accuracy = Column(Float)  # 0.0 - 1.0 (fraction), matches DIFFICULTY_THRESHOLD_* constants

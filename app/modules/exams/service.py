@@ -14,6 +14,12 @@ TODO: validate that an assessment must be 'active' before a slot can be created 
 """
 
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import NotFoundError
+from app.modules.exams.models import Assessment
+
+
 async def create_assessment(
     level_id: int, title: str, duration_minutes: int, created_by: int
 ) -> dict:
@@ -22,10 +28,18 @@ async def create_assessment(
     pass
 
 
-async def get_assessment(assessment_id: int) -> dict:
+async def get_assessment(assessment_id: int, db: AsyncSession) -> dict:
     """Return assessment by ID. Raises NotFoundError if missing."""
-    # TODO: query assessments by id
-    pass
+    assessment = await db.get(Assessment, assessment_id)
+    if assessment is None:
+        raise NotFoundError(f"Assessment {assessment_id} not found.")
+    return {
+        "id": assessment.id,
+        "level_id": assessment.level_id,
+        "title": assessment.title,
+        "duration_minutes": assessment.duration_minutes,
+        "status": assessment.status,
+    }
 
 
 async def update_assessment_status(assessment_id: int, status: str) -> dict:
