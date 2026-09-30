@@ -22,61 +22,33 @@ export function Login() {
     setError("");
 
     try {
-      console.log("Attempting login with:", email);
+      const form = new URLSearchParams();
+      form.append("username", email);
+      form.append("password", password);
 
-      // Call real backend authentication
-      const formData = new URLSearchParams();
-      formData.append('username', email);
-      formData.append('password', password);
-
-      const res = await api.post("/auth/login", formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      const res = await api.post("/auth/login", form, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      console.log("Login response:", res.data);
+      const { access_token, user: userData } = res.data;
+      login(access_token, "cookie");
 
-      if (!res.data.access_token || !res.data.user) {
-        setError("Invalid response from server");
-        setLoading(false);
-        return;
-      }
+      const role = userData.roles?.[0] ?? "student";
 
-      login(res.data.access_token, res.data.refresh_token);
-
-      // Navigate based on user role from backend
-      const roles = res.data.user.roles || [];
-      console.log("User roles:", roles);
-
-      const primaryRole = roles.length > 0 ? roles[0] : "";
-      console.log("Primary role:", primaryRole);
-
-      switch (primaryRole) {
-        case "student":
-          navigate("/student/dashboard");
-          break;
-        case "invigilator":
-          navigate("/invigilator/issue-key");
-          break;
-        case "track_owner":
+      switch (role) {
+        case "student": navigate("/student/dashboard"); break;
+        case "invigilator": navigate("/invigilator/issue-key"); break;
         case "fullstack_domain_owner":
         case "cyber_domain_owner":
         case "cloud_devops_domain_owner":
         case "ml_domain_owner":
-          navigate("/track-owner/students");
-          break;
-        case "admin":
-          navigate("/admin/directory");
-          break;
-        default:
-          console.log("Unknown role, redirecting to home");
-          navigate("/");
+          navigate("/track-owner/students"); break;
+        case "admin": navigate("/admin/directory"); break;
+        default: navigate("/");
       }
     } catch (err: any) {
-      console.error("Login error:", err);
-      console.error("Error response:", err.response);
-      setError(err.response?.data?.detail || err.message || "Invalid credentials");
+      const msg = err?.response?.data?.detail ?? err?.message ?? "Invalid credentials";
+      setError(typeof msg === "string" ? msg : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -93,18 +65,18 @@ export function Login() {
           <CardDescription>
             Enter your credentials to access your portal.
             <br />
-            <span className="text-xs text-muted-foreground mt-2 inline-block">Hint: use 'student@', 'invigilator@', 'track@', 'admin@' in email to mock roles</span>
+            <span className="text-xs text-muted-foreground mt-2 inline-block">Sign in with your username or email and password.</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
-                required 
+              <Label htmlFor="email">Username or Email</Label>
+              <Input
+                id="email"
+                type="text"
+                placeholder="username or email"
+                required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />

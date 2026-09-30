@@ -182,3 +182,14 @@ async def get_slots_due_for_allocation() -> list[uuid.UUID]:
     # async def get_slots_due_for_allocation(db: AsyncSession) -> list[uuid.UUID]
     # Placeholder returns empty list until wired into scheduler.
     return []
+
+
+async def get_allocation_id_for_booking(booking_id: int, db: AsyncSession) -> int | None:
+    """
+    Return the allocation id for a slot booking, or None if the student has not
+    been allocated a hall/seat yet. Used by attempts/service.start_exam() to find
+    the secret code that belongs to the student's booking.
+    """
+    return await db.scalar(
+        select(Allocation.id).where(Allocation.slot_booking_id == booking_id)
+    )

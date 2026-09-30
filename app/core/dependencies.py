@@ -143,6 +143,11 @@ async def require_student(user: StudentUser) -> dict[str, Any]:
     return _as_dict(user)
 
 
+async def get_current_student_id(user: StudentUser) -> int:
+    """The authenticated student's user ID, for student-owned operations."""
+    return user.id
+
+
 # ── Which tracks may they touch? ──────────────────────────────────────────────
 
 def managed_track_ids(user: User) -> set[int] | None:

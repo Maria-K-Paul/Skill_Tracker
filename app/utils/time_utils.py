@@ -42,3 +42,14 @@ def is_future(dt: datetime) -> bool:
 def format_iso(dt: datetime) -> str:
     """Format a datetime as an ISO 8601 string with UTC offset."""
     return dt.isoformat()
+
+
+def utcnow_naive() -> datetime:
+    """
+    Return the current UTC time WITHOUT tzinfo.
+
+    The DateTime columns in this project are `TIMESTAMP WITHOUT TIME ZONE`, and
+    asyncpg refuses timezone-aware values for those columns. Use this helper
+    when writing/comparing values stored in such columns.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
