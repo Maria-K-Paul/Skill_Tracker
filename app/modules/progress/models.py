@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -26,4 +26,5 @@ class ProgressionDecision(Base):
     attempt_id = Column(Integer, ForeignKey('attempts.id'))
     result_id = Column(Integer, ForeignKey('results.id'))
     decision = Column(String)
+    reason = Column(Text)  # human-readable explanation, e.g. 'Failed after 3 attempts'
     decided_at = Column(DateTime)
