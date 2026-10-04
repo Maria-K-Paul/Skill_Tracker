@@ -24,6 +24,8 @@ class ExamSession(Base):
     id = Column(Integer, primary_key=True)
     attempt_id = Column(Integer, ForeignKey('attempts.id'))
     secret_code_id = Column(Integer, ForeignKey('secret_codes.id'))
+    status = Column(String, default="ACTIVE")
+
     started_at = Column(DateTime)
     expires_at = Column(DateTime)
     ended_at = Column(DateTime)

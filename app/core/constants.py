@@ -84,3 +84,14 @@ VERDICT_FAIL = "fail"
 JOB_STATUS_RUNNING = "running"
 JOB_STATUS_SUCCESS = "success"
 JOB_STATUS_FAILED = "failed"
+
+# ── Proctoring Session Status ─────────────────────────────────────────────────
+SESSION_STATUS_ACTIVE = "ACTIVE"
+SESSION_STATUS_DISCONNECTED = "DISCONNECTED"
+SESSION_STATUS_COMPLETED = "COMPLETED"
+SESSION_STATUS_EXPIRED = "EXPIRED"
+SESSION_STATUS_TERMINATED = "TERMINATED"
+
+# ── Proctoring Constraints ────────────────────────────────────────────────────
+MAX_VIOLATIONS = 2
+HEARTBEAT_TIMEOUT_SECONDS = 60
