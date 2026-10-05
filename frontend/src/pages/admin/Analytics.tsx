@@ -5,13 +5,15 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
   LineChart, Line
 } from "recharts";
+import { motion } from "framer-motion";
+import { staggerContainer, revealVariants } from "../../lib/animations";
 
 // Consistent Color Mapping for Domains
 const DOMAIN_COLORS: Record<string, string> = {
   "Full Stack": "#0ea5e9",      // sky-500
   "Cybersecurity": "#f43f5e",   // rose-500
   "Cloud & DevOps": "#8b5cf6",  // violet-500
-  "AI / ML": "#10b981",         // emerald-500
+  "AI / ML": "hsl(var(--success))",         // emerald-500
 };
 
 // Mock Data
@@ -24,7 +26,7 @@ const kpis = {
 };
 
 const overallPassRateData = [
-  { name: 'Passed', value: 68, color: '#10b981' }, // emerald-500
+  { name: 'Passed', value: 68, color: 'hsl(var(--success))' }, // emerald-500
   { name: 'Failed', value: 32, color: '#f43f5e' }, // rose-500
 ];
 
@@ -95,17 +97,18 @@ export function Analytics() {
       />
 
       {/* KPI Row */}
-      <div className="grid gap-4 md:grid-cols-5 mb-6">
-        <Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.totalStudents.toLocaleString()}</div></CardContent></Card>
-        <Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Tests Conducted</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.totalTests.toLocaleString()}</div></CardContent></Card>
-        <Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Overall Pass Rate</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{kpis.overallPassRate}%</div></CardContent></Card>
-        <Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Certificates Issued</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.certsIssued.toLocaleString()}</div></CardContent></Card>
-        <Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Active Domains</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.activeDomains}</div></CardContent></Card>
-      </div>
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4 md:grid-cols-5 mb-6">
+        <motion.div variants={revealVariants}><Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.totalStudents.toLocaleString()}</div></CardContent></Card></motion.div>
+        <motion.div variants={revealVariants}><Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Tests Conducted</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.totalTests.toLocaleString()}</div></CardContent></Card></motion.div>
+        <motion.div variants={revealVariants}><Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Overall Pass Rate</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-success">{kpis.overallPassRate}%</div></CardContent></Card></motion.div>
+        <motion.div variants={revealVariants}><Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Certificates Issued</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.certsIssued.toLocaleString()}</div></CardContent></Card></motion.div>
+        <motion.div variants={revealVariants}><Card className="bg-primary/5 border-primary/20"><CardHeader className="py-4"><CardTitle className="text-sm font-medium text-muted-foreground">Active Domains</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{kpis.activeDomains}</div></CardContent></Card></motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Overall Pass Rate Donut */}
-        <Card className="col-span-1">
+        <motion.div variants={revealVariants} className="col-span-1">
+          <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Overall Pass Rate</CardTitle>
             <CardDescription>Success rate across all tests</CardDescription>
@@ -118,15 +121,17 @@ export function Analytics() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(val: number) => `${val}%`} />
+                <Tooltip formatter={(val: any) => `${val}%`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Pass Rate By Domain */}
-        <Card className="col-span-1 lg:col-span-2">
+        <motion.div variants={revealVariants} className="col-span-1 lg:col-span-2">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Pass Rate by Domain</CardTitle>
             <CardDescription>Comparison of success rates across tracks</CardDescription>
@@ -137,7 +142,7 @@ export function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="domain" />
                 <YAxis tickFormatter={(tick) => `${tick}%`} />
-                <Tooltip formatter={(val: number) => `${val}%`} />
+                <Tooltip formatter={(val: any) => `${val}%`} />
                 <Bar dataKey="passRate" radius={[4, 4, 0, 0]}>
                   {passRateByDomain.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={DOMAIN_COLORS[entry.domain] || '#cbd5e1'} />
@@ -147,11 +152,13 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Entrance Test Conversion */}
-        <Card>
+        <motion.div variants={revealVariants}>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Entrance Test Conversion</CardTitle>
             <CardDescription>Attempted vs Cleared per domain</CardDescription>
@@ -170,9 +177,11 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Pass Rate by Level */}
-        <Card>
+        <motion.div variants={revealVariants}>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Pass Rate by Level</CardTitle>
             <CardDescription>Success rate degradation across difficulty tiers</CardDescription>
@@ -183,7 +192,7 @@ export function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="level" />
                 <YAxis tickFormatter={(tick) => `${tick}%`} />
-                <Tooltip formatter={(val: number) => `${val}%`} />
+                <Tooltip formatter={(val: any) => `${val}%`} />
                 <Legend />
                 <Bar dataKey="Full Stack" fill={DOMAIN_COLORS["Full Stack"]} />
                 <Bar dataKey="Cybersecurity" fill={DOMAIN_COLORS["Cybersecurity"]} />
@@ -193,11 +202,13 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Attempts Distribution */}
-        <Card className="col-span-1">
+        <motion.div variants={revealVariants} className="col-span-1">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Attempts to Pass</CardTitle>
             <CardDescription>When do students typically succeed?</CardDescription>
@@ -214,9 +225,11 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Certificates Over Time */}
-        <Card className="col-span-1 lg:col-span-2">
+        <motion.div variants={revealVariants} className="col-span-1 lg:col-span-2">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Certificates Issued</CardTitle>
             <CardDescription>Cumulative growth over the semester</CardDescription>
@@ -233,11 +246,13 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Demographic: Domains */}
-        <Card className="col-span-1">
+        <motion.div variants={revealVariants} className="col-span-1">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Students by Domain</CardTitle>
           </CardHeader>
@@ -254,9 +269,11 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        </motion.div>
         
         {/* Demographic: Semesters */}
-        <Card className="col-span-1">
+        <motion.div variants={revealVariants} className="col-span-1">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Students by Semester</CardTitle>
           </CardHeader>
@@ -272,9 +289,11 @@ export function Analytics() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Aggregate Skill Gap Radar */}
-        <Card className="col-span-1">
+        <motion.div variants={revealVariants} className="col-span-1">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg">Aggregate Skill Profile</CardTitle>
             <CardDescription>Institution-wide strengths & weaknesses</CardDescription>
@@ -285,7 +304,8 @@ export function Analytics() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

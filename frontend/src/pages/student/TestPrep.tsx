@@ -3,15 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { CheckCircle2, Calendar, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { FlipCard } from "../../components/ui/flip-card";
 
 export function TestPrep() {
   const navigate = useNavigate();
 
-  const topics = [
-    "React Component Lifecycle & Hooks",
-    "State Management with Redux/Zustand",
-    "RESTful API Integration",
-    "Advanced TypeScript Generics"
+  const flashcards = [
+    { topic: "React Component Lifecycle & Hooks", expl: "Hooks allow function components to hook into React state and lifecycle features like useEffect for mounting, updating, and unmounting phases." },
+    { topic: "State Management with Redux/Zustand", expl: "Global state solutions for avoiding prop drilling, keeping complex application states predictable and easy to manage." },
+    { topic: "RESTful API Integration", expl: "Handling asynchronous requests, managing loading/error states, and properly caching responses using tools like React Query or Fetch API." },
+    { topic: "Advanced TypeScript Generics", expl: "Creating reusable types that work over a variety of types rather than a single one, providing maximum flexibility and type safety." }
   ];
 
   return (
@@ -25,17 +26,29 @@ export function TestPrep() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Focus Areas</CardTitle>
+              <CardTitle>Flashcards: Focus Areas</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3">
-                {topics.map((t, i) => (
-                  <li key={i} className="flex items-start">
-                    <CheckCircle2 className="mr-3 h-5 w-5 text-primary shrink-0" />
-                    <span>{t}</span>
-                  </li>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {flashcards.map((f, i) => (
+                  <FlipCard 
+                    key={i}
+                    trigger="click"
+                    axis="x"
+                    className="h-32"
+                    front={
+                      <div className="w-full h-full p-4 rounded-xl border bg-card shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center text-center transition-all">
+                        <span className="font-semibold text-sm">{f.topic}</span>
+                      </div>
+                    }
+                    back={
+                      <div className="w-full h-full p-4 rounded-xl border-primary bg-primary/10 shadow-sm cursor-pointer flex items-center justify-center text-center">
+                        <span className="text-xs font-medium text-foreground">{f.expl}</span>
+                      </div>
+                    }
+                  />
                 ))}
-              </ul>
+              </div>
             </CardContent>
           </Card>
           

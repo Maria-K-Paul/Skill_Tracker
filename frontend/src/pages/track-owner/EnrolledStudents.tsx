@@ -32,11 +32,11 @@ export function EnrolledStudents() {
   const getStatus = (student: any) => {
     if (student.attempts === student.maxAttempts) {
       // In a real app, we'd check if they passed. Mocking: Bob Jones failed, Diana passed
-      if (student.name === "Diana Prince") return <Badge className="bg-green-100 text-green-800">Passed</Badge>;
-      return <Badge className="bg-red-100 text-red-800">Blocked</Badge>;
+      if (student.name === "Diana Prince") return <Badge className="bg-success/20 text-success">Passed</Badge>;
+      return <Badge className="bg-destructive/20 text-destructive">Blocked</Badge>;
     }
     if (student.attempts === 0) return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>;
-    return <Badge className="bg-amber-100 text-amber-800">Yet to pass</Badge>;
+    return <Badge className="bg-warning/20 text-warning">Yet to pass</Badge>;
   };
 
   return (

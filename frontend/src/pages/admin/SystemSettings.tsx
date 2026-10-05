@@ -106,7 +106,7 @@ export function SystemSettings() {
     setMessage(null);
 
     try {
-      await api.post("/halls", {
+      await api.post("/halls/", {
         name: hallForm.name,
         location: hallForm.location,
         capacity: parseInt(hallForm.capacity),
@@ -146,7 +146,7 @@ export function SystemSettings() {
     setMessage(null);
 
     try {
-      const slotRes = await api.post("/slots/admin", {
+      const slotRes = await api.post("/slots/admin/", {
         level_id: parseInt(slotForm.level_id),
         start_time: new Date(slotForm.start_time).toISOString(),
         end_time: new Date(slotForm.end_time).toISOString(),

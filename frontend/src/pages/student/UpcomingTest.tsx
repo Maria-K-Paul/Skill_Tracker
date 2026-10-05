@@ -82,9 +82,9 @@ export function UpcomingTest() {
             </div>
           </div>
           
-          <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
-            <h4 className="font-semibold text-amber-800 dark:text-amber-500 mb-2">Important Instructions</h4>
-            <ul className="list-disc pl-5 space-y-1 text-sm text-amber-700 dark:text-amber-400/80">
+          <div className="mt-8 p-4 bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning rounded-lg">
+            <h4 className="font-semibold text-warning dark:text-warning mb-2">Important Instructions</h4>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-warning dark:text-warning/80">
               <li>Please arrive at the venue 15 minutes before the scheduled time.</li>
               <li>Wait for the invigilator to provide the unique Exam Key.</li>
               <li>You will need the Exam Key to start the test in the "Exam Taker" tab.</li>

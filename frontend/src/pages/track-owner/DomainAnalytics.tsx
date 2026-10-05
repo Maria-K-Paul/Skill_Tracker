@@ -44,7 +44,7 @@ export function DomainAnalytics() {
             <CardTitle className="text-sm font-medium">Avg Pass Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">68%</div>
+            <div className="text-2xl font-bold text-success">68%</div>
             <p className="text-xs text-muted-foreground mt-1">+4% from last month</p>
           </CardContent>
         </Card>
@@ -62,7 +62,7 @@ export function DomainAnalytics() {
             <CardTitle className="text-sm font-medium">Top Skill Gap</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold text-red-500">System Arch</div>
+            <div className="text-lg font-bold text-destructive">System Arch</div>
             <p className="text-xs text-muted-foreground mt-1">Only 20% proficiency</p>
           </CardContent>
         </Card>

@@ -103,7 +103,7 @@ export function LevelsList() {
       const med = parseInt(newLevelData.mediumCount) || 0;
       const hard = parseInt(newLevelData.hardCount) || 0;
       
-      const generated = [];
+      const generated: any[] = [];
       for(let i=0; i<easy; i++) generated.push({ 
         text: `Easy question ${i+1} on ${newLevelData.prompt || 'basics'}`, 
         diff: 'Easy', 
@@ -372,7 +372,7 @@ export function LevelsList() {
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {(q.options || []).map((opt: string, optIdx: number) => (
-                           <div key={optIdx} className={`text-xs p-2 rounded border ${q.correctAnswer === opt ? 'bg-green-100 border-green-500 font-medium' : 'bg-background border-border text-muted-foreground'}`}>
+                           <div key={optIdx} className={`text-xs p-2 rounded border ${q.correctAnswer === opt ? 'bg-success/20 border-success font-medium' : 'bg-background border-border text-muted-foreground'}`}>
                              {opt}
                            </div>
                         ))}

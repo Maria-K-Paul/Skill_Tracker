@@ -22,7 +22,7 @@ export function SlotBooking() {
   const domain = location.state?.domain || "Full Stack";
 
   const handleBook = () => {
-    const slot = slots?.find(s => s.id === selectedSlot);
+    const slot = slots?.find((s: any) => s.id === selectedSlot);
     if (slot && user) {
       const bookedData = {
         testName,
@@ -58,7 +58,7 @@ export function SlotBooking() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {slots.map(slot => (
+          {slots.map((slot: any) => (
             <Card key={slot.id} className={`transition-all ${slot.availableSeats === 0 ? 'opacity-50' : 'cursor-pointer'} ${selectedSlot === slot.id ? 'ring-2 ring-accent ring-offset-2' : ''}`} onClick={() => slot.availableSeats > 0 && setSelectedSlot(slot.id)}>
               <CardContent className="p-5 text-center flex flex-col items-center justify-center h-32">
                 <div className="mb-1 text-[16px] font-medium text-primary">
@@ -85,7 +85,7 @@ export function SlotBooking() {
           <DialogHeader>
             <DialogTitle>Confirm Booking</DialogTitle>
             <DialogDescription>
-              You are about to book the slot for {slots?.find(s => s.id === selectedSlot)?.date} at {slots?.find(s => s.id === selectedSlot)?.time}.
+              You are about to book the slot for {slots?.find((s: any) => s.id === selectedSlot)?.date} at {slots?.find((s: any) => s.id === selectedSlot)?.time}.
               <br/><br/>
               <strong>Note:</strong> The exact venue will be allotted automatically and displayed in the "Upcoming Test" section after booking.
             </DialogDescription>

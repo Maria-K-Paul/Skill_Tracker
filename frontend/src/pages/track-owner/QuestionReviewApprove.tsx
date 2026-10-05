@@ -33,13 +33,13 @@ export function QuestionReviewApprove() {
 
       <div className="space-y-4">
         {questions.map((q, idx) => (
-          <Card key={q.id} className={q.status === 'approved' ? 'border-green-500 bg-green-50' : q.status === 'rejected' ? 'border-red-500 bg-red-50' : ''}>
+          <Card key={q.id} className={q.status === 'approved' ? 'border-success bg-success/10' : q.status === 'rejected' ? 'border-destructive bg-destructive/10' : ''}>
             <CardContent className="p-6 flex flex-col md:flex-row gap-6">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="font-bold">Q{idx + 1}</span>
                   {q.status === 'pending' && <Badge variant="secondary">Pending Review</Badge>}
-                  {q.status === 'approved' && <Badge className="bg-green-500">Approved</Badge>}
+                  {q.status === 'approved' && <Badge className="bg-success/100">Approved</Badge>}
                   {q.status === 'rejected' && <Badge variant="destructive">Rejected</Badge>}
                 </div>
                 <h3 className="text-lg font-medium mb-4">{q.q}</h3>
@@ -53,7 +53,7 @@ export function QuestionReviewApprove() {
               </div>
               <div className="flex flex-row md:flex-col justify-end space-x-2 md:space-x-0 md:space-y-2">
                 <Button size="sm" variant="outline"><Edit3 className="h-4 w-4" /></Button>
-                <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => updateStatus(q.id, 'approved')}><Check className="h-4 w-4" /></Button>
+                <Button size="sm" variant="default" className="bg-success hover:bg-success" onClick={() => updateStatus(q.id, 'approved')}><Check className="h-4 w-4" /></Button>
                 <Button size="sm" variant="destructive" onClick={() => updateStatus(q.id, 'rejected')}><X className="h-4 w-4" /></Button>
               </div>
             </CardContent>

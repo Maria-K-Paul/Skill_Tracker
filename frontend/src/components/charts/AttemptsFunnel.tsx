@@ -5,16 +5,16 @@ interface AttemptsFunnelProps {
 }
 
 export function AttemptsFunnel({ data }: AttemptsFunnelProps) {
-  const colors = ["#0EA5A0", "#0891b2", "#0369a1", "#1e3a8a"];
+  const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"];
   
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-          <YAxis dataKey="attempt" type="category" axisLine={false} tickLine={false} tick={{ fill: '#0B1F3A', fontWeight: 500 }} />
-          <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none' }} />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+          <YAxis dataKey="attempt" type="category" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--foreground))', fontWeight: 500 }} />
+          <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }} />
           <Bar dataKey="count" radius={[0, 4, 4, 0]}>
             {data.map((_, index) => (
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
