@@ -6,7 +6,7 @@ Pydantic schemas for the analytics module.
 Response models for all analytics endpoints and summary tables.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
 from typing import Optional
 
@@ -64,11 +64,17 @@ class DifficultyPerformanceSummaryResponse(BaseModel):
     difficulty: str = Field(..., description="Difficulty level: easy, medium, or hard")
     correct_count: int = Field(..., ge=0, description="Number of correct answers")
     total_count: int = Field(..., gt=0, description="Total number of questions attempted")
-    accuracy: float = Field(..., ge=0.0, le=1.0, description="Calculated accuracy (correct/total)")
+    accuracy: float = Field(default=0.0, ge=0.0, le=1.0, description="Calculated accuracy (correct/total)")
     last_updated: datetime
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode="after")
+    def compute_accuracy(self) -> "DifficultyPerformanceSummaryResponse":
+        if self.total_count > 0:
+            self.accuracy = self.correct_count / self.total_count
+        return self
 
 
 class DashboardWidgetCacheResponse(BaseModel):

@@ -4,7 +4,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Plus, Trash2, Calendar, MapPin, Download, Play, Settings, Users } from "lucide-react";
+import { Plus, Trash2, Calendar, MapPin, Download, Users, Eye, EyeOff } from "lucide-react";
 
 interface Hall {
   id: number;
@@ -14,20 +14,43 @@ interface Hall {
 }
 
 interface Slot {
-  id: string;
-  level_id?: number;
-  date?: string;
+  id: number;
   start_time: string;
   end_time: string;
   booking_cutoff: string;
   status: string;
+  date: string | null;
+}
+
+function formatTime12h(time24: string): string {
+  const [h, m] = time24.split(":");
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
+function formatSlotDisplay(slot: Slot): string {
+  const datePart = slot.date
+    ? new Date(slot.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "No date";
+  return `${datePart}, ${formatTime12h(slot.start_time)} – ${formatTime12h(slot.end_time)}`;
 }
 
 interface SlotBooking {
-  id: string;
-  student_id: string;
+  id: number;
+  student_id: number;
   attempt_number: number;
   status: string;
+}
+
+function formatApiError(detail: unknown): string {
+  if (!detail) return "An unknown error occurred";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((e: any) => e?.msg || JSON.stringify(e)).join(", ");
+  }
+  return JSON.stringify(detail);
 }
 
 export function SystemSettings() {
@@ -36,19 +59,15 @@ export function SystemSettings() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [bookings, setBookings] = useState<SlotBooking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Hall form
-  const [hallForm, setHallForm] = useState({
-    name: "",
-    location: "",
-    capacity: "",
-  });
+  const [hallForm, setHallForm] = useState({ name: "", location: "", capacity: "" });
 
   // Slot form
   const [slotForm, setSlotForm] = useState({
-    level_id: "1",
     start_time: "",
     end_time: "",
     booking_cutoff: "",
@@ -62,37 +81,26 @@ export function SystemSettings() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       await Promise.all([fetchHalls(), fetchSlots()]);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   };
 
   const fetchHalls = async () => {
     try {
       const res = await api.get("/halls/");
-      console.log("Halls response:", res);
-      if (Array.isArray(res.data)) {
-        setHalls(res.data);
-      } else {
-        console.error("Unexpected response format:", res.data);
-        setHalls([]);
-      }
+      setHalls(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       console.error("Failed to load halls:", err);
-      console.error("Error details:", err.response?.data);
-      setMessage({
-        type: "error",
-        text: `Failed to load halls: ${err.response?.data?.detail || err.message}`,
-      });
       setHalls([]);
     }
   };
 
   const fetchSlots = async () => {
     try {
-      const res = await api.get("/slots/admin");
+      const res = await api.get("/slots/admin/");
       setSlots(res.data || []);
     } catch (err) {
       console.error("Failed to load slots:", err);
@@ -100,34 +108,35 @@ export function SystemSettings() {
     }
   };
 
-  const handleCreateHall = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
 
+  const handleCreateHall = async () => {
+    setMessage(null);
+    if (!hallForm.name.trim()) { setMessage({ type: "error", text: "Hall name is required." }); return; }
+    if (!hallForm.location.trim()) { setMessage({ type: "error", text: "Location is required." }); return; }
+    if (!hallForm.capacity || parseInt(hallForm.capacity) < 1) { setMessage({ type: "error", text: "Capacity must be at least 1." }); return; }
+    setSubmitting(true);
     try {
-      await api.post("/halls", {
+      await api.post("/halls/", {
         name: hallForm.name,
         location: hallForm.location,
         capacity: parseInt(hallForm.capacity),
       });
-
       setMessage({ type: "success", text: "Hall created successfully!" });
       setHallForm({ name: "", location: "", capacity: "" });
       await fetchHalls();
     } catch (err: any) {
       setMessage({
         type: "error",
-        text: err.response?.data?.detail || "Failed to create hall",
+        text: formatApiError(err.response?.data?.detail) || "Failed to create hall",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleDeleteHall = async (hallId: number, hallName: string) => {
     if (!confirm(`Delete hall "${hallName}"? This cannot be undone.`)) return;
-
+    setSubmitting(true);
     try {
       await api.delete(`/halls/${hallId}`);
       setMessage({ type: "success", text: `Hall "${hallName}" deleted!` });
@@ -135,22 +144,39 @@ export function SystemSettings() {
     } catch (err: any) {
       setMessage({
         type: "error",
-        text: err.response?.data?.detail || "Failed to delete hall",
+        text: formatApiError(err.response?.data?.detail) || "Failed to delete hall",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleCreateSlot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleCreateSlot = async () => {
     setMessage(null);
 
+    // JS validation — avoids browser native "field required" tooltip
+    if (!slotForm.start_time) { setMessage({ type: "error", text: "Start Time is required." }); return; }
+    if (!slotForm.end_time) { setMessage({ type: "error", text: "End Time is required." }); return; }
+    if (!slotForm.booking_cutoff) { setMessage({ type: "error", text: "Booking Cutoff is required." }); return; }
+    if (selectedHalls.length === 0) { setMessage({ type: "error", text: "Select at least one hall." }); return; }
+
+    const startDt = new Date(slotForm.start_time);
+    const endDt = new Date(slotForm.end_time);
+    const cutoffDt = new Date(slotForm.booking_cutoff);
+
+    if (isNaN(startDt.getTime())) { setMessage({ type: "error", text: "Start Time is invalid." }); return; }
+    if (isNaN(endDt.getTime())) { setMessage({ type: "error", text: "End Time is invalid." }); return; }
+    if (isNaN(cutoffDt.getTime())) { setMessage({ type: "error", text: "Booking Cutoff is invalid." }); return; }
+    if (endDt <= startDt) { setMessage({ type: "error", text: "End Time must be after Start Time." }); return; }
+    if (cutoffDt >= startDt) { setMessage({ type: "error", text: "Booking Cutoff must be before Start Time." }); return; }
+
+    setSubmitting(true);
     try {
-      const slotRes = await api.post("/slots/admin", {
-        level_id: parseInt(slotForm.level_id),
-        start_time: new Date(slotForm.start_time).toISOString(),
-        end_time: new Date(slotForm.end_time).toISOString(),
-        booking_cutoff: new Date(slotForm.booking_cutoff).toISOString(),
+      const slotRes = await api.post("/slots/admin/", {
+        level_id: 1,
+        start_time: slotForm.start_time,
+        end_time: slotForm.end_time,
+        booking_cutoff: slotForm.booking_cutoff,
       });
 
       const newSlotId = slotRes.data.id;
@@ -160,21 +186,16 @@ export function SystemSettings() {
       }
 
       setMessage({ type: "success", text: "Slot created and halls linked!" });
-      setSlotForm({
-        level_id: "1",
-        start_time: "",
-        end_time: "",
-        booking_cutoff: "",
-      });
+      setSlotForm({ start_time: "", end_time: "", booking_cutoff: "" });
       setSelectedHalls([]);
       await fetchSlots();
     } catch (err: any) {
       setMessage({
         type: "error",
-        text: err.response?.data?.detail || "Failed to create slot",
+        text: formatApiError(err.response?.data?.detail) || "Failed to create slot",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -189,30 +210,30 @@ export function SystemSettings() {
     }
   };
 
-  const handleRunAllocation = async (slotId: string) => {
-    if (!confirm("Run allocation? Students will be randomly assigned to halls.")) return;
-
-    setLoading(true);
+  const handleToggleSlotStatus = async (slot: Slot) => {
+    const newStatus = slot.status === "open" ? "draft" : "open";
+    const action = newStatus === "open" ? "open this slot for student booking" : "close this slot";
+    if (!confirm(`Are you sure you want to ${action}?`)) return;
+    setSubmitting(true);
     try {
-      const res = await api.post(`/allocation/${slotId}/run`);
-      setMessage({ type: "success", text: res.data.message });
+      await api.patch(`/slots/admin/${slot.id}/status`, { status: newStatus });
+      setMessage({ type: "success", text: `Slot status changed to "${newStatus}"!` });
       await fetchSlots();
     } catch (err: any) {
       setMessage({
         type: "error",
-        text: err.response?.data?.detail || "Failed to run allocation",
+        text: formatApiError(err.response?.data?.detail) || "Failed to update slot status",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleDownloadHallSheet = async (slotId: string, hallId: number, hallName: string) => {
+  const handleDownloadHallSheet = async (slotId: number, hallId: number, hallName: string) => {
     try {
       const res = await api.get(`/hall-sheets/${slotId}/${hallId}/download-pdf`, {
         responseType: "blob",
       });
-
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -220,12 +241,11 @@ export function SystemSettings() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-
       setMessage({ type: "success", text: `Hall sheet for ${hallName} downloaded!` });
     } catch (err: any) {
       setMessage({
         type: "error",
-        text: err.response?.data?.detail || "Failed to download hall sheet",
+        text: formatApiError(err.response?.data?.detail) || "Failed to download hall sheet",
       });
     }
   };
@@ -236,7 +256,7 @@ export function SystemSettings() {
     );
   };
 
-  if (loading && halls.length === 0 && slots.length === 0) {
+  if (initialLoading) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
@@ -259,28 +279,18 @@ export function SystemSettings() {
       {/* Tab Selector */}
       <div className="flex gap-4 border-b border-border">
         <button
-          onClick={() => {
-            setActiveTab("halls");
-            setMessage(null);
-          }}
+          onClick={() => { setActiveTab("halls"); setMessage(null); }}
           className={`pb-2 px-4 font-medium transition-colors ${
-            activeTab === "halls"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted hover:text-primary"
+            activeTab === "halls" ? "border-b-2 border-primary text-primary" : "text-muted hover:text-primary"
           }`}
         >
           <MapPin className="inline w-4 h-4 mr-2" />
           Halls & Venues
         </button>
         <button
-          onClick={() => {
-            setActiveTab("slots");
-            setMessage(null);
-          }}
+          onClick={() => { setActiveTab("slots"); setMessage(null); }}
           className={`pb-2 px-4 font-medium transition-colors ${
-            activeTab === "slots"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted hover:text-primary"
+            activeTab === "slots" ? "border-b-2 border-primary text-primary" : "text-muted hover:text-primary"
           }`}
         >
           <Calendar className="inline w-4 h-4 mr-2" />
@@ -292,9 +302,7 @@ export function SystemSettings() {
       {message && (
         <div
           className={`p-4 rounded-lg ${
-            message.type === "success"
-              ? "bg-success/10 text-success"
-              : "bg-destructive/10 text-destructive"
+            message.type === "success" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
           }`}
         >
           {message.text}
@@ -310,7 +318,7 @@ export function SystemSettings() {
               <CardDescription>Add exam venues/halls to the system</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateHall} className="space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="hall-name">Hall Name *</Label>
@@ -319,7 +327,6 @@ export function SystemSettings() {
                       placeholder="e.g., Hall A"
                       value={hallForm.name}
                       onChange={(e) => setHallForm({ ...hallForm, name: e.target.value })}
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -329,7 +336,6 @@ export function SystemSettings() {
                       placeholder="e.g., CS Block, 2nd Floor"
                       value={hallForm.location}
                       onChange={(e) => setHallForm({ ...hallForm, location: e.target.value })}
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -341,15 +347,14 @@ export function SystemSettings() {
                       placeholder="e.g., 50"
                       value={hallForm.capacity}
                       onChange={(e) => setHallForm({ ...hallForm, capacity: e.target.value })}
-                      required
                     />
                   </div>
                 </div>
-                <Button type="submit" disabled={loading}>
+                <Button type="button" onClick={handleCreateHall} disabled={submitting}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Hall
+                  {submitting ? "Creating..." : "Create Hall"}
                 </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
 
@@ -366,21 +371,17 @@ export function SystemSettings() {
               ) : (
                 <div className="space-y-3">
                   {halls.map((hall) => (
-                    <div
-                      key={hall.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
-                    >
+                    <div key={hall.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div>
                         <h3 className="font-semibold">{hall.name}</h3>
-                        <p className="text-sm text-muted">
-                          📍 {hall.location} • 👥 Capacity: {hall.capacity}
-                        </p>
+                        <p className="text-sm text-muted">📍 {hall.location} • 👥 Capacity: {hall.capacity}</p>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
                         className="text-destructive hover:bg-destructive/10"
                         onClick={() => handleDeleteHall(hall.id, hall.name)}
+                        disabled={submitting}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -399,12 +400,10 @@ export function SystemSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Create Exam Slot</CardTitle>
-              <CardDescription>
-                Schedule exam slots with date, time, and halls
-              </CardDescription>
+              <CardDescription>Schedule exam slots with date, time, and halls</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateSlot} className="space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-time">Start Time *</Label>
@@ -413,7 +412,6 @@ export function SystemSettings() {
                       type="datetime-local"
                       value={slotForm.start_time}
                       onChange={(e) => setSlotForm({ ...slotForm, start_time: e.target.value })}
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -423,7 +421,6 @@ export function SystemSettings() {
                       type="datetime-local"
                       value={slotForm.end_time}
                       onChange={(e) => setSlotForm({ ...slotForm, end_time: e.target.value })}
-                      required
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
@@ -433,7 +430,6 @@ export function SystemSettings() {
                       type="datetime-local"
                       value={slotForm.booking_cutoff}
                       onChange={(e) => setSlotForm({ ...slotForm, booking_cutoff: e.target.value })}
-                      required
                     />
                   </div>
                 </div>
@@ -467,18 +463,15 @@ export function SystemSettings() {
                   )}
                   <p className="text-xs text-muted">
                     Selected: {selectedHalls.length} hall(s) | Total capacity:{" "}
-                    {selectedHalls.reduce(
-                      (sum, id) => sum + (halls.find((h) => h.id === id)?.capacity || 0),
-                      0
-                    )}
+                    {selectedHalls.reduce((sum, id) => sum + (halls.find((h) => h.id === id)?.capacity || 0), 0)}
                   </p>
                 </div>
 
-                <Button type="submit" disabled={loading || selectedHalls.length === 0}>
+                <Button type="button" onClick={handleCreateSlot} disabled={submitting || selectedHalls.length === 0}>
                   <Calendar className="w-4 h-4 mr-2" />
-                  Create Slot
+                  {submitting ? "Creating..." : "Create Slot"}
                 </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
 
@@ -499,39 +492,43 @@ export function SystemSettings() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
-                            <CardTitle className="text-base">
-                              Slot {slot.id.substring(0, 8)}
-                            </CardTitle>
+                            <CardTitle className="text-base">Slot #{slot.id}</CardTitle>
                             <p className="text-sm text-muted">
-                              {slot.start_time} - {slot.end_time}
+                              {formatSlotDisplay(slot)}
                             </p>
                           </div>
-                          <span className="px-3 py-1 bg-success/10 text-success rounded-full text-sm">
+                          <span className={`px-3 py-1 rounded-full text-sm ${
+                            slot.status === "open" ? "bg-success/10 text-success" :
+                            slot.status === "draft" ? "bg-secondary text-muted" :
+                            "bg-muted/10 text-muted"
+                          }`}>
                             {slot.status}
                           </span>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => handleViewBookings(slot)}
+                            variant={slot.status === "open" ? "outline" : "default"}
+                            onClick={() => handleToggleSlotStatus(slot)}
+                            disabled={submitting}
                           >
+                            {slot.status === "open" ? (
+                              <><EyeOff className="w-4 h-4 mr-1" /> Close Slot</>
+                            ) : (
+                              <><Eye className="w-4 h-4 mr-1" /> Open for Booking</>
+                            )}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleViewBookings(slot)}>
                             <Users className="w-4 h-4 mr-1" />
                             View Bookings
-                          </Button>
-                          <Button size="sm" onClick={() => handleRunAllocation(slot.id)}>
-                            <Play className="w-4 h-4 mr-1" />
-                            Run Allocation
                           </Button>
                         </div>
 
                         {selectedSlot?.id === slot.id && (
                           <div className="border-t pt-3 mt-3">
-                            <p className="text-sm font-medium mb-2">
-                              Bookings: {bookings.length}
-                            </p>
+                            <p className="text-sm font-medium mb-2">Bookings: {bookings.length}</p>
                             <div className="space-y-2 mb-3">
                               <p className="text-sm font-medium">Download Hall Sheets:</p>
                               <div className="flex flex-wrap gap-2">
@@ -540,9 +537,7 @@ export function SystemSettings() {
                                     key={hall.id}
                                     size="sm"
                                     variant="outline"
-                                    onClick={() =>
-                                      handleDownloadHallSheet(slot.id, hall.id, hall.name)
-                                    }
+                                    onClick={() => handleDownloadHallSheet(slot.id, hall.id, hall.name)}
                                   >
                                     <Download className="w-3 h-3 mr-1" />
                                     {hall.name}

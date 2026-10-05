@@ -21,7 +21,6 @@ Cross-module contracts:
 """
 
 import secrets as _secrets
-import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
@@ -32,13 +31,14 @@ from app.core.config import settings  # noqa: F401 — code_encryption_key used 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.security import decrypt_code, encrypt_code
 from app.modules.secret_code.models import SecretCode
+from app.utils.time_utils import utcnow_naive
 
 # Default TTL for codes; can be overridden to a shorter window in tests.
 _CODE_TTL_HOURS: int = 48
 
 
 async def generate_code_for_student(
-    allocation_id: uuid.UUID,
+    allocation_id: int,
     db: AsyncSession,
     *,
     ttl_hours: int = _CODE_TTL_HOURS,
@@ -68,7 +68,7 @@ async def generate_code_for_student(
             "Call generate_code_for_student only once per allocation."
         )
 
-    now = datetime.now(timezone.utc)
+    now = utcnow_naive()
 
     # ── Plaintext generation + immediate encryption ───────────────────────────
     # The plaintext variable must not be returned, logged, or stored.
@@ -80,9 +80,8 @@ async def generate_code_for_student(
 
     code = SecretCode(
         allocation_id=allocation_id,
-        encrypted_code=encrypted,
+        code_encrypted=encrypted,
         is_used=False,
-        created_at=now,
         expires_at=now + timedelta(hours=ttl_hours),
     )
     db.add(code)
@@ -90,8 +89,8 @@ async def generate_code_for_student(
 
 
 async def reveal_code_for_admin(
-    secret_code_id: uuid.UUID,
-    revealed_by_user_id: uuid.UUID,
+    secret_code_id: int,
+    revealed_by_user_id: int,
     db: AsyncSession,
 ) -> str:
     """
@@ -117,11 +116,11 @@ async def reveal_code_for_admin(
     if code is None:
         raise NotFoundError(f"Secret code {secret_code_id} not found.")
 
-    now = datetime.now(timezone.utc)
+    now = utcnow_naive()
     expires = code.expires_at
-    if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=timezone.utc)
-    if now > expires:
+    if expires is not None and expires.tzinfo is not None:
+        expires = expires.astimezone(timezone.utc).replace(tzinfo=None)
+    if expires is not None and now > expires:
         raise ValidationError("This secret code has expired and cannot be revealed.")
 
     # Audit BEFORE returning so the log entry is written even if the caller
@@ -138,11 +137,11 @@ async def reveal_code_for_admin(
     )
 
     # nosec — decrypt_code uses Fernet; result is only returned to admin callers.
-    return decrypt_code(code.encrypted_code)  # nosec
+    return decrypt_code(code.code_encrypted)  # nosec
 
 
 async def verify_and_consume_code(
-    allocation_id: uuid.UUID,
+    allocation_id: int,
     submitted_code: str,
     db: AsyncSession,
 ) -> bool:
@@ -181,17 +180,17 @@ async def verify_and_consume_code(
     if code.is_used:
         return False
 
-    now = datetime.now(timezone.utc)
+    now = utcnow_naive()
     expires = code.expires_at
-    if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=timezone.utc)
-    if now > expires:
+    if expires is not None and expires.tzinfo is not None:
+        expires = expires.astimezone(timezone.utc).replace(tzinfo=None)
+    if expires is not None and now > expires:
         return False
 
     # nosec — constant-time comparison via == is sufficient here because
     # Fernet tokens are not subject to timing-oracle attacks at this layer;
     # the real secret is the Fernet key, not the plaintext comparison.
-    stored_plaintext = decrypt_code(code.encrypted_code)  # nosec
+    stored_plaintext = decrypt_code(code.code_encrypted)  # nosec
     if stored_plaintext != submitted_code:
         return False
 

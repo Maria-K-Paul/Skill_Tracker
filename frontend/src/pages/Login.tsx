@@ -31,7 +31,11 @@ export function Login() {
       });
 
       const { access_token, user: userData } = res.data;
-      login(access_token, "cookie");
+      login(access_token, {
+        full_name: userData.full_name,
+        email: userData.email,
+        roles: userData.roles,
+      });
 
       const role = userData.roles?.[0] ?? "student";
 

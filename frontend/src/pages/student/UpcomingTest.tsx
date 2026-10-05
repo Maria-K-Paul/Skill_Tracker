@@ -4,27 +4,75 @@ import { Button } from "../../components/ui/button";
 import { Calendar, Clock, MapPin, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { api } from "../../lib/api";
+
+interface Booking {
+  id: number;
+  slot_id: number;
+  attempt_number: number;
+  status: string;
+  booked_at: string | null;
+}
+
+interface SlotInfo {
+  id: number;
+  start_time: string;
+  end_time: string;
+  date: string | null;
+  status: string;
+}
+
+function formatTime12h(time24: string): string {
+  const [h, m] = time24.split(":");
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
 
 export function UpcomingTest() {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [upcomingTest, setUpcomingTest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [slot, setSlot] = useState<SlotInfo | null>(null);
 
   useEffect(() => {
-    if (user) {
-      const saved = localStorage.getItem(`bookedSlot_${user.id}`);
-    if (saved) {
-      try {
-        setUpcomingTest(JSON.parse(saved));
-      } catch (e) {
-        // ignore
-      }
-    }
-    }
-  }, [user]);
+    loadBookings();
+  }, []);
 
-  if (!upcomingTest) {
+  const loadBookings = async () => {
+    try {
+      const res = await api.get("/slots/student/my-bookings");
+      const bookings: Booking[] = res.data || [];
+      const active = bookings.find((b) => b.status === "booked");
+      if (active) {
+        setBooking(active);
+        try {
+          const slotRes = await api.get(`/slots/student/${active.slot_id}`);
+          setSlot(slotRes.data);
+        } catch {
+          setSlot(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load bookings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <PageHeader title="Upcoming Test" description="View details of your scheduled tests." />
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking) {
     return (
       <div className="mx-auto max-w-4xl">
         <PageHeader title="Upcoming Test" description="View details of your scheduled tests." />
@@ -42,17 +90,24 @@ export function UpcomingTest() {
     );
   }
 
+  const dateDisplay = slot?.date
+    ? new Date(slot.date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : "TBD";
+  const timeDisplay = slot
+    ? `${formatTime12h(slot.start_time)} - ${formatTime12h(slot.end_time)}`
+    : "TBD";
+
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader title="Upcoming Test" description="Details of your next scheduled examination." />
-      
+
       <Card className="overflow-hidden border-t-4 border-t-primary shadow-md">
         <CardHeader className="bg-muted/30 pb-8">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-3xl mb-2">{upcomingTest.testName}</CardTitle>
+              <CardTitle className="text-3xl mb-2">Exam Slot #{booking.slot_id}</CardTitle>
               <div className="flex items-center text-muted-foreground">
-                <Target className="w-4 h-4 mr-1" /> {upcomingTest.domain || upcomingTest.level}
+                <Target className="w-4 h-4 mr-1" /> Attempt #{booking.attempt_number}
               </div>
             </div>
             <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold tracking-wide border border-primary/20">
@@ -66,22 +121,22 @@ export function UpcomingTest() {
               <span className="text-sm font-medium text-muted-foreground flex items-center">
                 <Calendar className="w-4 h-4 mr-2" /> Date
               </span>
-              <span className="text-lg font-semibold">{upcomingTest.date}</span>
+              <span className="text-lg font-semibold">{dateDisplay}</span>
             </div>
             <div className="flex flex-col space-y-1">
               <span className="text-sm font-medium text-muted-foreground flex items-center">
                 <Clock className="w-4 h-4 mr-2" /> Time
               </span>
-              <span className="text-lg font-semibold">{upcomingTest.time}</span>
+              <span className="text-lg font-semibold">{timeDisplay}</span>
             </div>
             <div className="flex flex-col space-y-1">
               <span className="text-sm font-medium text-muted-foreground flex items-center">
-                <MapPin className="w-4 h-4 mr-2" /> Venue (Allotted)
+                <MapPin className="w-4 h-4 mr-2" /> Venue
               </span>
-              <span className="text-lg font-semibold text-primary">{upcomingTest.venue}</span>
+              <span className="text-lg font-semibold text-primary">Assigned after allocation</span>
             </div>
           </div>
-          
+
           <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
             <h4 className="font-semibold text-amber-800 dark:text-amber-500 mb-2">Important Instructions</h4>
             <ul className="list-disc pl-5 space-y-1 text-sm text-amber-700 dark:text-amber-400/80">

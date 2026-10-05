@@ -22,6 +22,7 @@ from app.modules.ai_engine.models import SkillGapReport, SkillGapItem
 from app.modules.ai_engine.schemas import SkillGapAnalysisRequest
 from app.modules.ai_engine.skill_gap import SkillGapAgent
 from app.modules.attempts.models import Attempt
+from app.utils.time_utils import utcnow_naive
 
 router = APIRouter()
 
@@ -59,15 +60,19 @@ async def analyze_skill_gap(
         )
 
     # Authorization: student can only analyze their own attempts
-    if current_user['role'] == 'student':
-        if attempt.student_id != current_user['id']:
+    roles = current_user.get('roles', [])
+    if 'admin' not in roles:
+        from app.modules.users.models import Student
+        student = await db.scalar(
+            select(Student).where(Student.user_id == current_user['id'])
+        )
+        if student is None or attempt.student_id != student.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied"
             )
-        student_id = current_user['id']
+        student_id = student.id
     else:
-        # Admin can analyze any attempt
         student_id = attempt.student_id
 
     # Check if analysis already exists (unless force regenerate)
@@ -137,13 +142,20 @@ async def get_latest_skill_gap(
     Authorization: Students get their own latest analysis.
     Admins must use GET /skill-gap/{attempt_id} with a specific attempt.
     """
-    if current_user['role'] != 'student':
+    roles = current_user.get('roles', [])
+    if 'student' not in roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admins must specify an attempt_id"
         )
 
-    student_id = current_user['id']
+    from app.modules.users.models import Student
+    student = await db.scalar(
+        select(Student).where(Student.user_id == current_user['id'])
+    )
+    if student is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student profile not found")
+    student_id = student.id
 
     # Get latest report for this student
     report_query = (
@@ -200,11 +212,17 @@ async def get_skill_gap_by_attempt(
         )
 
     # Authorization check
-    if current_user['role'] == 'student' and attempt.student_id != current_user['id']:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+    roles = current_user.get('roles', [])
+    if 'admin' not in roles:
+        from app.modules.users.models import Student
+        student = await db.scalar(
+            select(Student).where(Student.user_id == current_user['id'])
         )
+        if student is None or attempt.student_id != student.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
 
     # Load report
     report_query = select(SkillGapReport).where(
@@ -282,7 +300,7 @@ async def _persist_analysis(
         student_id=student_id,
         attempt_id=attempt_id,
         level_id=level_id,
-        created_at=datetime.now(timezone.utc),
+        created_at=utcnow_naive(),
         summary=analysis.get('llm_interpretation', '')[:500] if 'llm_interpretation' in analysis else "Deterministic analysis only",
         overall_performance=str(analysis.get('overall_performance', {})),
         recommendations=analysis.get('recommendations', []),

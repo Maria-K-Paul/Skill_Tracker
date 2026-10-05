@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Code2, ShieldAlert, Cloud, BrainCircuit, Key, Play, BookOpen, Target, Calendar, Award } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 
 export function StudentDashboard() {
   const { user } = useAuth();
@@ -16,15 +18,26 @@ export function StudentDashboard() {
     { id: "aiml", name: "AI / ML", icon: BrainCircuit, desc: "Machine Learning & Data Science" }
   ];
 
+  const [activeBookings, setActiveBookings] = useState(0);
+
+  useEffect(() => {
+    api.get("/slots/student/my-bookings")
+      .then((res) => {
+        const bookings = res.data || [];
+        setActiveBookings(bookings.filter((b: any) => b.status === "booked").length);
+      })
+      .catch(() => {});
+  }, []);
+
   // If the student has already cleared a domain's entrance test, they are assigned that domain.
   if (user?.domain) {
     return (
       <div className="mx-auto max-w-5xl">
-        <PageHeader 
-          title={`Welcome back, ${user?.name || "Student"}`} 
-          description="Here is an overview of your SkillTrack progress." 
+        <PageHeader
+          title={`Welcome back, ${user?.name || "Student"}`}
+          description="Here is an overview of your SkillTrack progress."
         />
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -35,7 +48,7 @@ export function StudentDashboard() {
               <div className="text-2xl font-bold">{user.domain}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Current Level</CardTitle>
@@ -46,58 +59,36 @@ export function StudentDashboard() {
               <p className="text-xs text-muted-foreground mt-1">3/3 Attempts Remaining</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Upcoming Test</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {(() => {
-                try {
-                  const saved = localStorage.getItem(`bookedSlot_${user.id}`);
-                  if (saved) {
-                    const slot = JSON.parse(saved);
-                    return (
-                      <>
-                        <div className="text-2xl font-bold truncate" title={slot.testName}>{slot.testName}</div>
-                        <p className="text-xs text-muted-foreground mt-1">{slot.date} at {slot.time}</p>
-                      </>
-                    );
-                  }
-                } catch (e) {
-                  // ignore
-                }
-                return (
-                  <>
-                    <div className="text-2xl font-bold">None</div>
-                    <p className="text-xs text-muted-foreground mt-1">No tests booked</p>
-                  </>
-                );
-              })()}
+              {activeBookings > 0 ? (
+                <>
+                  <div className="text-2xl font-bold">{activeBookings} Booked</div>
+                  <Button variant="link" className="px-0 mt-1 text-primary" onClick={() => navigate("/student/upcoming-test")}>
+                    View Details →
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">None</div>
+                  <p className="text-xs text-muted-foreground mt-1">No tests booked</p>
+                </>
+              )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Certificates</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {(() => {
-                  try {
-                    const saved = localStorage.getItem(`mockResults_${user.id}`);
-                    if (saved) {
-                      const results = JSON.parse(saved);
-                      return Array.isArray(results) ? results.filter((r: any) => r.passed).length : 0;
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                  return 0;
-                })()} Earned
-              </div>
+              <div className="text-2xl font-bold">0 Earned</div>
               <Button variant="link" className="px-0 mt-2 text-primary" onClick={() => navigate("/student/certificates")}>
                 View Certificates →
               </Button>

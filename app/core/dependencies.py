@@ -138,14 +138,34 @@ async def require_admin(user: AdminUser) -> dict[str, Any]:
     return _as_dict(user)
 
 
-async def require_student(user: StudentUser) -> dict[str, Any]:
-    """Same dict as get_current_user; 403 unless the user holds the student role."""
-    return _as_dict(user)
+async def require_student(user: StudentUser, db: DbSession) -> dict[str, Any]:
+    """Same dict as get_current_user but with the student table PK as 'id'.
+
+    All student-facing tables (slot_bookings, attempts, enrollments) reference
+    students.id — NOT users.id.  This dependency looks up the Student row so
+    that ``current_student["id"]`` is always the correct FK value.
+    """
+    from sqlalchemy import select
+    from app.modules.users.models import Student
+
+    student = await db.scalar(select(Student).where(Student.user_id == user.id))
+    if student is None:
+        raise Forbidden("STUDENT_PROFILE_MISSING", "No student profile found for this user.")
+    return {"id": student.id, "user": user, "roles": user.role_names}
 
 
-async def get_current_student_id(user: StudentUser) -> int:
-    """The authenticated student's user ID, for student-owned operations."""
-    return user.id
+async def get_current_student_id(user: StudentUser, db: DbSession) -> int:
+    """The authenticated student's PK in the students table.
+
+    All student-facing tables reference students.id, NOT users.id.
+    """
+    from sqlalchemy import select
+    from app.modules.users.models import Student
+
+    student_id = await db.scalar(select(Student.id).where(Student.user_id == user.id))
+    if student_id is None:
+        raise Forbidden("STUDENT_PROFILE_MISSING", "No student profile found for this user.")
+    return student_id
 
 
 # ── Which tracks may they touch? ──────────────────────────────────────────────

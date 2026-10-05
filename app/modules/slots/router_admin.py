@@ -12,9 +12,7 @@ Routes:
   GET    /slots/admin/                      — list all slots (admin)
 """
 
-import uuid
-
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -36,8 +34,14 @@ async def create_slot(
     db: AsyncSession = Depends(get_db),
 ) -> schemas.SlotAdminResponse:
     """Create a new exam slot in DRAFT status."""
+    if payload.start_time is None:
+        raise HTTPException(status_code=422, detail="start_time is required")
+    if payload.end_time is None:
+        raise HTTPException(status_code=422, detail="end_time is required")
+    if payload.booking_cutoff is None:
+        raise HTTPException(status_code=422, detail="booking_cutoff is required")
+
     slot = await service.create_slot(
-        level_id=payload.level_id,
         start_time=payload.start_time,
         end_time=payload.end_time,
         booking_cutoff=payload.booking_cutoff,
@@ -66,13 +70,31 @@ async def list_slots(
     return [schemas.SlotAdminResponse.model_validate(s) for s in slots]
 
 
+@router.patch(
+    "/{slot_id}/status",
+    response_model=schemas.SlotAdminResponse,
+    summary="Update a slot's status (admin)",
+)
+async def update_slot_status(
+    slot_id: int,
+    payload: schemas.SlotStatusUpdateRequest,
+    current_admin: dict = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.SlotAdminResponse:
+    """Change a slot's status (e.g. draft -> open)."""
+    slot = await service.update_slot_status(slot_id=slot_id, new_status=payload.status, db=db)
+    await db.commit()
+    await db.refresh(slot)
+    return schemas.SlotAdminResponse.model_validate(slot)
+
+
 @router.post(
     "/{slot_id}/halls",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Link a hall to a slot (admin)",
 )
 async def link_hall(
-    slot_id: uuid.UUID,
+    slot_id: int,
     payload: schemas.HallLinkRequest,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
@@ -88,8 +110,8 @@ async def link_hall(
     summary="Unlink a hall from a slot (admin)",
 )
 async def unlink_hall(
-    slot_id: uuid.UUID,
-    hall_id: uuid.UUID,
+    slot_id: int,
+    hall_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> None:
@@ -104,7 +126,7 @@ async def unlink_hall(
     summary="List all bookings for a slot (admin)",
 )
 async def list_slot_bookings(
-    slot_id: uuid.UUID,
+    slot_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.BookingAdminResponse]:
@@ -119,7 +141,7 @@ async def list_slot_bookings(
     summary="View capacity for a slot (admin)",
 )
 async def get_slot_capacity(
-    slot_id: uuid.UUID,
+    slot_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> schemas.CapacityResponse:

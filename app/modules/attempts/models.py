@@ -28,6 +28,7 @@ class ExamSession(Base):
     expires_at = Column(DateTime)
     ended_at = Column(DateTime)
     last_heartbeat_at = Column(DateTime)
+    status = Column(String)
 
 class ProctoringEvent(Base):
     __tablename__ = 'proctoring_events'
