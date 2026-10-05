@@ -31,6 +31,7 @@ from app.core.constants import (
     VERDICT_PASS
 )
 from app.core.database import AsyncSessionLocal
+from app.utils.time_utils import utcnow_naive
 from app.modules.analytics.models import (
     StudentPerformanceSummary,
     DomainPerformanceSummary,
@@ -108,7 +109,7 @@ async def refresh_student_performance_summary() -> None:
                 total_attempts=total_attempts,
                 passed_levels=passed_levels,
                 avg_percentage=avg_percentage,
-                last_updated=datetime.now(timezone.utc)
+                last_updated=utcnow_naive()
             )
             summary_records.append(summary)
 
@@ -182,7 +183,7 @@ async def refresh_domain_performance_summary() -> None:
                 track_id=track_id,
                 total_students=total_students,
                 avg_pass_rate=avg_pass_rate,
-                last_updated=datetime.now(timezone.utc)
+                last_updated=utcnow_naive()
             )
             summary_records.append(summary)
 
@@ -233,7 +234,7 @@ async def refresh_semester_progress_summary() -> None:
                 student_id=row.student_id,
                 academic_year_id=row.academic_year_id,
                 levels_completed=row.levels_completed,
-                last_updated=datetime.now(timezone.utc)
+                last_updated=utcnow_naive()
             )
             summary_records.append(summary)
 
@@ -286,7 +287,7 @@ async def refresh_topic_gap_summary() -> None:
                 topic_id=row.topic_id,
                 avg_accuracy=row.avg_accuracy or 0.0,
                 attempt_count=row.attempt_count,
-                last_updated=datetime.now(timezone.utc)
+                last_updated=utcnow_naive()
             )
             summary_records.append(summary)
 
@@ -344,7 +345,7 @@ async def refresh_difficulty_performance_summary() -> None:
                 difficulty=row.difficulty,
                 correct_count=row.correct_count or 0,
                 total_count=row.total_count,
-                last_updated=datetime.now(timezone.utc)
+                last_updated=utcnow_naive()
             )
             summary_records.append(summary)
 
@@ -373,7 +374,7 @@ async def refresh_all() -> int:
         # Create job record with status='running'
         job = AnalyticsRefreshJob(
             job_name='nightly_refresh',
-            started_at=datetime.now(timezone.utc),
+            started_at=utcnow_naive(),
             status=JOB_STATUS_RUNNING,
             finished_at=None
         )
@@ -392,7 +393,7 @@ async def refresh_all() -> int:
 
             # Update job status to 'success'
             job.status = JOB_STATUS_SUCCESS
-            job.finished_at = datetime.now(timezone.utc)
+            job.finished_at = utcnow_naive()
             await db.commit()
 
             return job_id
@@ -400,7 +401,7 @@ async def refresh_all() -> int:
         except Exception as e:
             # Update job status to 'failed' on any exception
             job.status = JOB_STATUS_FAILED
-            job.finished_at = datetime.now(timezone.utc)
+            job.finished_at = utcnow_naive()
             await db.commit()
 
             # Re-raise the exception for logging/alerting
@@ -421,7 +422,7 @@ async def get_dashboard_widget(widget_key: str) -> dict | None:
         # Query for widget where key matches and not expired
         query = select(DashboardWidgetCache).where(
             DashboardWidgetCache.widget_key == widget_key,
-            DashboardWidgetCache.expires_at > datetime.now(timezone.utc)
+            DashboardWidgetCache.expires_at > utcnow_naive()
         )
 
         result = await db.execute(query)
@@ -443,7 +444,7 @@ async def set_dashboard_widget(widget_key: str, payload: dict, ttl_seconds: int 
     """
     async with AsyncSessionLocal() as db:
         # Calculate expiration timestamp
-        cached_at = datetime.now(timezone.utc)
+        cached_at = utcnow_naive()
         expires_at = cached_at + timedelta(seconds=ttl_seconds)
 
         # Check if widget already exists

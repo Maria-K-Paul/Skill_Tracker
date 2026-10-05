@@ -16,7 +16,6 @@ Security:
     the plaintext code — one audit log write per row, always.
 """
 
-import uuid
 from io import BytesIO
 from datetime import datetime
 
@@ -37,7 +36,7 @@ from app.modules.slots.models import SlotBooking
 
 
 async def get_hall_sheet(
-    slot_id: uuid.UUID, db: AsyncSession
+    slot_id: int, db: AsyncSession
 ) -> list[HallSheetRow]:
     """
     Return hall-wise student + seat data for a slot.
@@ -81,9 +80,9 @@ async def get_hall_sheet(
 
 
 async def get_printable_hall_sheet(
-    slot_id: uuid.UUID,
-    hall_id: uuid.UUID,
-    revealed_by_user_id: uuid.UUID,
+    slot_id: int,
+    hall_id: int,
+    revealed_by_user_id: int,
     db: AsyncSession,
 ) -> list[HallSheetPrintRow]:
     """
@@ -150,9 +149,9 @@ async def get_printable_hall_sheet(
 
 
 async def generate_hall_sheet_pdf(
-    slot_id: uuid.UUID,
-    hall_id: uuid.UUID,
-    revealed_by_user_id: uuid.UUID,
+    slot_id: int,
+    hall_id: int,
+    revealed_by_user_id: int,
     db: AsyncSession,
 ) -> BytesIO:
     """
@@ -212,8 +211,8 @@ async def generate_hall_sheet_pdf(
     <b>Hall:</b> {hall.name}<br/>
     <b>Location:</b> {hall.location}<br/>
     <b>Capacity:</b> {hall.capacity}<br/>
-    <b>Date:</b> {slot.date if hasattr(slot, 'date') else 'N/A'}<br/>
-    <b>Time:</b> {slot.start_time if hasattr(slot, 'start_time') else 'N/A'} - {slot.end_time if hasattr(slot, 'end_time') else 'N/A'}<br/>
+    <b>Date:</b> {slot.date.strftime('%Y-%m-%d') if slot.date else 'N/A'}<br/>
+    <b>Time:</b> {slot.start_time.strftime('%H:%M') if slot.start_time else 'N/A'} - {slot.end_time.strftime('%H:%M') if slot.end_time else 'N/A'}<br/>
     <b>Total Students:</b> {len(rows)}
     """
     info = Paragraph(info_text, subtitle_style)

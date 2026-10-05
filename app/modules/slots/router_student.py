@@ -13,8 +13,6 @@ Routes:
   GET    /slots/student/my-bookings        — list student's own bookings
 """
 
-import uuid
-
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,7 +38,14 @@ async def list_available_slots(
     SECURITY: Response schema contains NO hall information whatsoever.
     """
     slots = await service.list_open_slots(db=db)
-    return [schemas.SlotStudentResponse.model_validate(s) for s in slots]
+    results = []
+    for s in slots:
+        current_bookings, total_capacity = await service.check_capacity(s.id, db=db)
+        resp = schemas.SlotStudentResponse.model_validate(s)
+        resp.total_capacity = total_capacity
+        resp.available_seats = max(0, total_capacity - current_bookings)
+        results.append(resp)
+    return results
 
 
 @router.post(
@@ -63,7 +68,7 @@ async def book_slot(
       - Student must be eligible (progress.service.check_eligibility).
       - Slot must have remaining capacity.
     """
-    student_id = uuid.UUID(str(current_student["id"]))
+    student_id: int = current_student["id"]
     booking = await service.book_slot(
         student_id=student_id,
         slot_id=payload.slot_id,
@@ -80,7 +85,7 @@ async def book_slot(
     summary="Cancel own booking (student, pre-cutoff only)",
 )
 async def cancel_booking(
-    booking_id: uuid.UUID,
+    booking_id: int,
     current_student: dict = Depends(require_student),
     db: AsyncSession = Depends(get_db),
 ) -> schemas.BookingResponse:
@@ -88,7 +93,7 @@ async def cancel_booking(
     Cancel a booking before the slot's booking_cutoff.
     Returns HTTP 409 if the cutoff has already passed — never a silent no-op.
     """
-    student_id = uuid.UUID(str(current_student["id"]))
+    student_id: int = current_student["id"]
     booking = await service.cancel_booking(
         booking_id=booking_id,
         student_id=student_id,
@@ -109,6 +114,36 @@ async def list_my_bookings(
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.BookingResponse]:
     """Return all bookings (any status) for the authenticated student."""
-    student_id = uuid.UUID(str(current_student["id"]))
+    student_id: int = current_student["id"]
     bookings = await service.list_student_bookings(student_id=student_id, db=db)
     return [schemas.BookingResponse.model_validate(b) for b in bookings]
+
+
+@router.get(
+    "/{slot_id}",
+    response_model=schemas.SlotStudentResponse,
+    summary="Get a single slot by ID (student, hall-free view)",
+)
+async def get_slot(
+    slot_id: int,
+    current_student: dict = Depends(require_student),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.SlotStudentResponse:
+    """
+    Return a single slot by ID — used by UpcomingTest to show slot details
+    even after the slot is no longer open for booking.
+
+    SECURITY: Response schema contains NO hall information.
+    """
+    from app.modules.slots.models import Slot
+    from sqlalchemy import select
+
+    slot = await db.get(Slot, slot_id)
+    if slot is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError(f"Slot {slot_id} not found.")
+    current_bookings, total_capacity = await service.check_capacity(slot_id, db=db)
+    resp = schemas.SlotStudentResponse.model_validate(slot)
+    resp.total_capacity = total_capacity
+    resp.available_seats = max(0, total_capacity - current_bookings)
+    return resp

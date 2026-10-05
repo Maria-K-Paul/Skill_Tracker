@@ -3,39 +3,9 @@ import { PageHeader } from "../../components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Code2, ShieldAlert, Cloud, BrainCircuit, Key, Play, BookOpen, Target, Calendar, Award, ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
-import { Reveal } from "../../components/ui/reveal";
-import { SpotlightCard } from "../../components/ui/spotlight-card";
-import { CountUp } from "../../components/ui/count-up";
-import { FlipCard } from "../../components/ui/flip-card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "../../components/ui/dialog";
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    }
-  }
-};
-
-const item = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1, 
-    transition: { 
-      type: "spring" as const, 
-      stiffness: 200, 
-      damping: 20,
-      mass: 0.8
-    } 
-  }
-};
+import { Code2, ShieldAlert, Cloud, BrainCircuit, Key, Play, BookOpen, Target, Calendar, Award } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 
 export function StudentDashboard() {
   const { user, updateUser } = useAuth();
@@ -72,126 +42,83 @@ export function StudentDashboard() {
     }
   ];
 
+  const [activeBookings, setActiveBookings] = useState(0);
+
+  useEffect(() => {
+    api.get("/slots/student/my-bookings")
+      .then((res) => {
+        const bookings = res.data || [];
+        setActiveBookings(bookings.filter((b: any) => b.status === "booked").length);
+      })
+      .catch(() => {});
+  }, []);
+
+  // If the student has already cleared a domain's entrance test, they are assigned that domain.
   if (user?.domain) {
     return (
-      <div className="mx-auto max-w-5xl px-2">
-        <PageHeader 
-          title={`Welcome back, ${user?.name || "Student"}`} 
-          description="Here is an overview of your SkillTrack progress." 
+      <div className="mx-auto max-w-5xl">
+        <PageHeader
+          title={`Welcome back, ${user?.name || "Student"}`}
+          description="Here is an overview of your SkillTrack progress."
         />
-        
-        <motion.div 
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mt-4 auto-rows-[160px]"
-        >
-          <motion.div variants={item} className="lg:col-span-2">
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} transition={{ type: "spring", stiffness: 400 }} className="h-full">
-              <SpotlightCard className="h-full border-border/40 overflow-hidden relative group bg-card border rounded-xl shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="p-6 flex flex-col h-full">
-                  <div className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <h3 className="text-sm font-semibold tracking-tight text-muted-foreground">Current Domain</h3>
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <BookOpen className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold tracking-tight mt-auto">{user.domain}</div>
-                </div>
-              </SpotlightCard>
-            </motion.div>
-          </motion.div>
-          
-          <motion.div variants={item}>
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} transition={{ type: "spring", stiffness: 400 }} className="h-full">
-              <SpotlightCard className="h-full border-border/40 overflow-hidden relative group bg-card border rounded-xl shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="p-6 flex flex-col h-full">
-                  <div className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <h3 className="text-sm font-semibold tracking-tight text-muted-foreground">Current Level</h3>
-                    <div className="p-2 rounded-lg bg-secondary/20 text-secondary-foreground">
-                      <Target className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold tracking-tight mt-auto">Level 1</div>
-                  <p className="text-xs font-medium text-muted-foreground mt-1.5 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success/100"></span>
-                    <CountUp value={3} delay={0.2} />/3 Attempts
-                  </p>
-                </div>
-              </SpotlightCard>
-            </motion.div>
-          </motion.div>
-          
-          <motion.div variants={item}>
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} transition={{ type: "spring", stiffness: 400 }} className="h-full">
-              <SpotlightCard className="h-full border-border/40 overflow-hidden relative group bg-card border rounded-xl shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="p-6 flex flex-col h-full">
-                  <div className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <h3 className="text-sm font-semibold tracking-tight text-muted-foreground">Certificates</h3>
-                    <div className="p-2 rounded-lg bg-warning/100/10 text-warning">
-                      <Award className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold tracking-tight mt-auto flex items-center gap-2">
-                    {(() => {
-                      try {
-                        const saved = localStorage.getItem(`mockResults_${user.id}`);
-                        if (saved) {
-                          const results = JSON.parse(saved);
-                          const num = Array.isArray(results) ? results.filter((r: any) => r.passed).length : 0;
-                          return <CountUp value={num} delay={0.3} />;
-                        }
-                      } catch (e) {}
-                      return <CountUp value={0} />;
-                    })()} Earned
-                  </div>
-                </div>
-              </SpotlightCard>
-            </motion.div>
-          </motion.div>
 
-          <motion.div variants={item} className="lg:col-span-4">
-            <motion.div whileHover={{ y: -4, scale: 1.01 }} transition={{ type: "spring", stiffness: 400 }} className="h-full">
-              <SpotlightCard className="h-full border-border/40 overflow-hidden relative group bg-card border rounded-xl shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-info/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="p-6 flex flex-row items-center justify-between h-full">
-                  <div>
-                    <h3 className="text-sm font-semibold tracking-tight text-muted-foreground mb-3 flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-info/100/10 text-info"><Calendar className="h-3 w-3" /></div> Upcoming Test
-                    </h3>
-                    {(() => {
-                      try {
-                        const saved = localStorage.getItem(`bookedSlot_${user.id}`);
-                        if (saved) {
-                          const slot = JSON.parse(saved);
-                          return (
-                            <>
-                              <div className="text-2xl font-bold truncate tracking-tight">{slot.testName}</div>
-                              <p className="text-sm font-medium text-muted-foreground mt-1.5 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-warning/100"></span>
-                                {slot.date} at {slot.time}
-                              </p>
-                            </>
-                          );
-                        }
-                      } catch (e) {}
-                      return (
-                        <>
-                          <div className="text-2xl font-bold tracking-tight text-muted-foreground">None</div>
-                          <p className="text-sm font-medium text-muted-foreground mt-1.5">No tests booked right now.</p>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <Button variant="outline" className="hidden md:flex">View Calendar</Button>
-                </div>
-              </SpotlightCard>
-            </motion.div>
-          </motion.div>
-        </motion.div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Current Domain</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{user.domain}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Current Level</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Level 1</div>
+              <p className="text-xs text-muted-foreground mt-1">3/3 Attempts Remaining</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Test</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {activeBookings > 0 ? (
+                <>
+                  <div className="text-2xl font-bold">{activeBookings} Booked</div>
+                  <Button variant="link" className="px-0 mt-1 text-primary" onClick={() => navigate("/student/upcoming-test")}>
+                    View Details →
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">None</div>
+                  <p className="text-xs text-muted-foreground mt-1">No tests booked</p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Certificates</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0 Earned</div>
+              <Button variant="link" className="px-0 mt-2 text-primary" onClick={() => navigate("/student/certificates")}>
+                View Certificates →
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         <Reveal delay={0.2}>
           <div className="mt-10 grid gap-6 lg:grid-cols-2">

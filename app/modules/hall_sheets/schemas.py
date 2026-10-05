@@ -16,9 +16,6 @@ This module has no own database table — it composes data from:
   allocations, secret_codes, slot_bookings, halls
 """
 
-import uuid
-from datetime import datetime
-
 from pydantic import BaseModel
 
 
@@ -30,11 +27,11 @@ class HallSheetRow(BaseModel):
     not optional, not null, not hidden behind a flag.  It does not exist here.
     Any code review that adds a code-related field to this class should be blocked.
     """
-    allocation_id: uuid.UUID
-    hall_id: uuid.UUID
+    allocation_id: int
+    hall_id: int
     seat_no: int
-    student_id: uuid.UUID
-    student_display_name: str  # Human-readable name from booking/user join
+    student_id: int
+    student_display_name: str
     attempt_number: int
     booking_status: str
 
@@ -48,24 +45,24 @@ class HallSheetPrintRow(BaseModel):
     ONLY generated after a write_audit_log() call per row.
     MUST NOT be used as a response model for the non-print endpoint.
     """
-    allocation_id: uuid.UUID
-    hall_id: uuid.UUID
+    allocation_id: int
+    hall_id: int
     seat_no: int
-    student_id: uuid.UUID
+    student_id: int
     student_display_name: str
     attempt_number: int
-    secret_code: str  # Plaintext — admin print path only; audited per row
+    secret_code: str
 
 
 class HallSheetSlotResponse(BaseModel):
     """Grouped hall-wise response for a slot (no codes)."""
-    slot_id: uuid.UUID
-    hall_id: uuid.UUID
+    slot_id: int
+    hall_id: int
     rows: list[HallSheetRow]
 
 
 class HallSheetPrintResponse(BaseModel):
     """Printable hall sheet for a specific hall (codes included)."""
-    slot_id: uuid.UUID
-    hall_id: uuid.UUID
+    slot_id: int
+    hall_id: int
     rows: list[HallSheetPrintRow]

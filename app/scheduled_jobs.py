@@ -19,11 +19,12 @@ Jobs:
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from app.modules.analytics import service as analytics_service
 from app.core.database import AsyncSessionLocal
 from app.modules.analytics.models import DashboardWidgetCache
+from app.utils.time_utils import utcnow_naive
 from sqlalchemy import delete
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ async def cleanup_expired_widgets():
         async with AsyncSessionLocal() as db:
             # Delete widgets where expires_at < now
             query = delete(DashboardWidgetCache).where(
-                DashboardWidgetCache.expires_at < datetime.now(timezone.utc)
+                DashboardWidgetCache.expires_at < utcnow_naive()
             )
 
             result = await db.execute(query)

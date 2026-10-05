@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # ── Database ──────────────────────────────────────────────────────────────
     database_url: str
     database_url_direct: str
+    redis_url: str = "redis://localhost:6379/0"
     # Connections per API process = db_pool_size + db_max_overflow. Keep
     # (processes x that number) below PostgreSQL's max_connections, or put PgBouncer in front.
     db_pool_size: int = 10

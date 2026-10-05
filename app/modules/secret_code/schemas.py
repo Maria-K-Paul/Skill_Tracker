@@ -11,7 +11,6 @@ SECURITY RULES ENFORCED BY SCHEMA DESIGN:
 Student-facing routes must NEVER use either schema — this module has no student routes.
 """
 
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
@@ -25,12 +24,11 @@ class SecretCodeStatusResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: uuid.UUID
-    allocation_id: uuid.UUID
+    id: int
+    allocation_id: int
     is_used: bool
-    created_at: datetime
     expires_at: datetime
-    used_at: datetime | None
+    used_at: datetime | None = None
 
 
 class SecretCodeRevealResponse(BaseModel):
@@ -42,8 +40,8 @@ class SecretCodeRevealResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: uuid.UUID
-    allocation_id: uuid.UUID
-    plaintext_code: str  # SECURITY: plaintext only here; admin reveal + audited path
+    id: int
+    allocation_id: int
+    plaintext_code: str
     is_used: bool
     expires_at: datetime

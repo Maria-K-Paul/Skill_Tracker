@@ -7,7 +7,7 @@ from app.modules.domains.models import Track, Level, Topic, Subtopic
 from pydantic import BaseModel
 from typing import List
 
-router = APIRouter(prefix="/domains", tags=["Domains"])
+router = APIRouter()
 
 class TrackCreate(BaseModel):
     name: str
@@ -23,6 +23,13 @@ class TopicCreate(BaseModel):
     description: str
     sequence_no: int
     is_optional: bool = False
+
+@router.get("/levels")
+async def list_all_levels(db: AsyncSession = Depends(get_db)):
+    """Return all levels across all tracks — used by admin slot creation form."""
+    result = await db.execute(select(Level).order_by(Level.track_id, Level.level_no))
+    return result.scalars().all()
+
 
 @router.get("/tracks")
 async def list_tracks(db: AsyncSession = Depends(get_db)):

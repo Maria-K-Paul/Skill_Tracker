@@ -20,19 +20,19 @@ Key rules implemented:
 """
 
 import secrets as _secrets
-import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, ValidationError
 from app.modules.allocation.models import Allocation
+from app.modules.halls.models import Hall
 from app.modules.secret_code import service as secret_code_service  # noqa: E402
 from app.modules.slots.models import BookingStatus, Slot, SlotBooking, SlotHall, SlotStatus
 
 
-async def run_allocation(slot_id: uuid.UUID, db: AsyncSession) -> None:
+async def run_allocation(slot_id: int, db: AsyncSession) -> None:
     """
     Execute the full allocation process for a slot after its booking_cutoff.
 
@@ -65,10 +65,10 @@ async def run_allocation(slot_id: uuid.UUID, db: AsyncSession) -> None:
             f"Slot {slot_id} cannot be allocated in status '{slot.status}'. "
             "Status must be 'open' or 'closed'."
         )
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     cutoff = slot.booking_cutoff
-    if cutoff.tzinfo is None:
-        cutoff = cutoff.replace(tzinfo=timezone.utc)
+    if cutoff.tzinfo is not None:
+        cutoff = cutoff.astimezone(timezone.utc).replace(tzinfo=None)
     if now < cutoff:
         raise ValidationError(
             f"Allocation cannot run before the booking cutoff "
@@ -105,13 +105,13 @@ async def run_allocation(slot_id: uuid.UUID, db: AsyncSession) -> None:
     # Step 5 — load hall capacities.
     # TODO(integration): reads halls.capacity column — owned by halls module owner.
     hall_rows = await db.execute(
-        select(SlotHall.hall_id, text("halls.capacity"))
+        select(SlotHall.hall_id, Hall.capacity)
         .select_from(SlotHall)
-        .join(text("halls"), text("halls.id = slot_halls.hall_id"))
+        .join(Hall, Hall.id == SlotHall.hall_id)
         .where(SlotHall.slot_id == slot_id)
         .order_by(SlotHall.hall_id)
     )
-    halls: list[tuple[uuid.UUID, int]] = [
+    halls: list[tuple[int, int]] = [
         (row[0], row[1]) for row in hall_rows.fetchall()
     ]
     if not halls:
@@ -160,7 +160,51 @@ async def run_allocation(slot_id: uuid.UUID, db: AsyncSession) -> None:
     # Caller (router) commits the transaction.
 
 
-async def get_slots_due_for_allocation() -> list[uuid.UUID]:
+async def allocate_single_booking(booking_id: int, slot_id: int, db: AsyncSession) -> Allocation:
+    """
+    Assign a single booking to the next available seat.
+
+    Picks the first hall (by hall_id) that still has capacity, assigns the next
+    sequential seat_no, creates the Allocation row and generates a secret code.
+    """
+    hall_rows = await db.execute(
+        select(SlotHall.hall_id, Hall.capacity)
+        .select_from(SlotHall)
+        .join(Hall, Hall.id == SlotHall.hall_id)
+        .where(SlotHall.slot_id == slot_id)
+        .order_by(SlotHall.hall_id)
+    )
+    halls: list[tuple[int, int]] = [(row[0], row[1]) for row in hall_rows.fetchall()]
+    if not halls:
+        raise ValidationError(f"Slot {slot_id} has no halls linked.")
+
+    for hall_id, capacity in halls:
+        current_in_hall = await db.scalar(
+            select(func.count(Allocation.id)).where(
+                Allocation.hall_id == hall_id,
+                Allocation.slot_booking_id.in_(
+                    select(SlotBooking.id).where(SlotBooking.slot_id == slot_id)
+                ),
+            )
+        ) or 0
+        if current_in_hall < capacity:
+            alloc = Allocation(
+                slot_booking_id=booking_id,
+                hall_id=hall_id,
+                seat_no=current_in_hall + 1,
+            )
+            db.add(alloc)
+            await db.flush()
+            await db.refresh(alloc)
+            await secret_code_service.generate_code_for_student(
+                allocation_id=alloc.id, db=db,
+            )
+            return alloc
+
+    raise ConflictError("All halls are full — no seats available.")
+
+
+async def get_slots_due_for_allocation() -> list[int]:
     """
     Return slot IDs where booking_cutoff has passed and no allocations exist yet.
 
@@ -179,7 +223,7 @@ async def get_slots_due_for_allocation() -> list[uuid.UUID]:
     TODO(workers): Wire this into the scheduler — owned by app/workers/ contributor.
     """
     # Implementation requires a DB session; the full signature is:
-    # async def get_slots_due_for_allocation(db: AsyncSession) -> list[uuid.UUID]
+    # async def get_slots_due_for_allocation(db: AsyncSession) -> list[int]
     # Placeholder returns empty list until wired into scheduler.
     return []
 

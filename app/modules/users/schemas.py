@@ -9,7 +9,7 @@ to_lower/to_upper afterwards. That's why the patterns accept both cases.
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any, Generic, TypeVar
 
 from pydantic import (
@@ -208,7 +208,7 @@ class CreateStudentRequest(BaseModel):
 
     @model_validator(mode="after")
     def check_values(self) -> "CreateStudentRequest":
-        if self.account_expires_at and self.account_expires_at < datetime.now():
+        if self.account_expires_at and self.account_expires_at < datetime.now(UTC):
             raise ValueError("account_expires_at must be in the future")
         return self
 

@@ -40,6 +40,7 @@ from app.modules.attempts.router import router as attempts_router
 from app.modules.ai_engine.router import router as ai_engine_router
 from app.modules.analytics.router import router as analytics_router
 from app.modules.notifications.router import router as notifications_router
+from app.modules.proctoring.router import router as proctoring_router
 
 # ── App Factory ─────────────────────────────────────────────────────────────
 
@@ -96,3 +97,4 @@ app.include_router(attempts_router,      prefix=f"{API_PREFIX}/attempts",      t
 app.include_router(ai_engine_router,     prefix=f"{API_PREFIX}/ai-engine",     tags=["AI Engine"])
 app.include_router(analytics_router,     prefix=f"{API_PREFIX}/analytics",     tags=["Analytics"])
 app.include_router(notifications_router, prefix=f"{API_PREFIX}/notifications",  tags=["Notifications"])
+app.include_router(proctoring_router,    prefix=f"{API_PREFIX}/proctoring",    tags=["Proctoring"])
