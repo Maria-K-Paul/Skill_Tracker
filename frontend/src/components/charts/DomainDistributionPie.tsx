@@ -5,7 +5,7 @@ interface DomainDistributionPieProps {
 }
 
 export function DomainDistributionPie({ data }: DomainDistributionPieProps) {
-  const COLORS = ['#0EA5A0', '#0B1F3A', '#f59e0b', '#8b5cf6'];
+  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
   return (
     <div className="h-[300px] w-full">
@@ -24,8 +24,8 @@ export function DomainDistributionPie({ data }: DomainDistributionPieProps) {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none' }} />
-          <Legend verticalAlign="bottom" height={36} iconType="circle" />
+          <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }} />
+          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

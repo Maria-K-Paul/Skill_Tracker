@@ -38,10 +38,10 @@ export function UserDetails() {
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case "Active": return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none">{status}</Badge>;
-      case "At risk": return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-none">{status}</Badge>;
-      case "Removed": return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-none">{status}</Badge>;
-      case "Completed": return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none">{status}</Badge>;
+      case "Active": return <Badge className="bg-success/20 text-success hover:bg-success/20 border-none">{status}</Badge>;
+      case "At risk": return <Badge className="bg-warning/20 text-warning hover:bg-warning/20 border-none">{status}</Badge>;
+      case "Removed": return <Badge className="bg-destructive/20 text-destructive hover:bg-destructive/20 border-none">{status}</Badge>;
+      case "Completed": return <Badge className="bg-info/20 text-info hover:bg-info/20 border-none">{status}</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };

@@ -3,6 +3,7 @@ import { Maximize, ShieldAlert } from "lucide-react";
 import { Button } from "../ui/button";
 import { useProctoring } from "../../hooks/useProctoring";
 import { cn } from "../../lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProctoringGuardProps {
   children: React.ReactNode;
@@ -39,15 +40,30 @@ export function ProctoringGuard({ children, onViolationLimit, isMock = false }: 
 
   return (
     <>
-      {violations > 0 && (
-        <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-center bg-destructive py-2 text-destructive-foreground">
-          <ShieldAlert className="mr-2 h-4 w-4" />
-          <span className="text-sm font-bold">
-            WARNING: Tab switch detected! ({violations}/2 violations). One more will auto-submit.
-          </span>
-        </div>
-      )}
-      <div className={cn("h-screen overflow-hidden", violations > 0 && "pt-8")}>
+      <AnimatePresence>
+        {violations > 0 && (
+          <motion.div 
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ 
+              y: 0, 
+              opacity: 1,
+              x: [-0, -5, 5, -5, 5, 0] // Gentle shake on entry
+            }}
+            transition={{ 
+              duration: 0.5,
+              x: { duration: 0.4, delay: 0.2 }
+            }}
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed left-0 right-0 top-0 z-50 flex items-center justify-center bg-destructive py-2 text-destructive-foreground shadow-lg"
+          >
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            <span className="text-sm font-bold">
+              WARNING: Tab switch detected! ({violations}/2 violations). One more will auto-submit.
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className={cn("h-screen overflow-hidden transition-all duration-300", violations > 0 && "pt-8")}>
         {children}
       </div>
     </>

@@ -5,6 +5,7 @@ import { SkillGapRadar } from "../../components/charts/SkillGapRadar";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Loader2, TrendingUp, TrendingDown, Minus, AlertCircle } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { FlipCard } from "../../components/ui/flip-card";
 
 interface GapItem {
   topic_id: number;

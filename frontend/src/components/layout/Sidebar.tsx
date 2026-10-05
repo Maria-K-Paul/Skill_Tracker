@@ -6,6 +6,7 @@ import {
   Calendar, FileText, Target, BarChart2, UserX
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { motion } from "framer-motion";
 
 export function Sidebar({ isCollapsed }: { isCollapsed?: boolean }) {
   const { user } = useAuth();
@@ -48,8 +49,8 @@ export function Sidebar({ isCollapsed }: { isCollapsed?: boolean }) {
   if (user?.role === "admin") links = adminLinks;
 
   return (
-    <div className={cn("flex flex-col bg-secondary transition-all duration-200 ease-out h-[calc(100vh-56px)]", isCollapsed ? "w-[72px]" : "w-[240px]")}>
-      <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+    <div className={cn("flex flex-col bg-card border-r border-border transition-all duration-300 ease-in-out h-[calc(100vh-64px)] z-10", isCollapsed ? "w-[72px]" : "w-[260px]")}>
+      <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto custom-scrollbar">
         {links.map((link) => (
           <NavLink
             key={link.to}
@@ -57,25 +58,37 @@ export function Sidebar({ isCollapsed }: { isCollapsed?: boolean }) {
             title={isCollapsed ? link.label : undefined}
             className={({ isActive }) =>
               cn(
-                "relative flex items-center rounded-lg transition-colors",
+                "relative flex items-center rounded-lg transition-all duration-200 group",
                 isCollapsed ? "flex-col justify-center px-1 py-3" : "px-3 py-2.5",
-                isActive 
-                  ? "bg-secondary text-primary font-medium" 
-                  : "text-primary hover:bg-[#F2F2F2]"
+                !isActive && "text-muted-foreground hover:text-primary"
               )
             }
           >
             {({ isActive }) => (
               <>
-                {isActive && !isCollapsed && (
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent rounded-r-full" />
+                {isActive && (
+                  <motion.div
+                    layoutId="activeSidebarTab"
+                    className="absolute inset-0 bg-primary/10 rounded-lg shadow-sm"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
                 )}
-                <div className={cn("relative flex items-center justify-center", isCollapsed ? "mb-1" : "mr-4")}>
-                  <link.icon className={cn("h-6 w-6", isActive ? "text-primary" : "text-muted")} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && !isCollapsed && (
+                  <motion.div 
+                    layoutId="activeSidebarIndicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-2/3 w-[3px] bg-primary rounded-r-full" 
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <div className={cn("relative flex items-center justify-center transition-transform duration-200 z-10", isCollapsed ? "mb-1" : "mr-4", isActive ? "scale-110" : "group-hover:scale-110")}>
+                  <link.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary")} strokeWidth={isActive ? 2.5 : 2} />
                 </div>
                 <span className={cn(
+                  "relative z-10 transition-colors",
                   isCollapsed ? "text-[10px] text-center w-full truncate leading-tight" : "text-sm flex-1",
-                  isActive && !isCollapsed ? "font-medium" : "font-normal text-muted"
+                  isActive ? "font-semibold text-primary" : "font-medium"
                 )}>
                   {link.label}
                 </span>

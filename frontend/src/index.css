@@ -1,12 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 @layer base {
-  body {
-    background-color: theme('colors.background');
-    color: theme('colors.primary.DEFAULT');
-    font-family: theme('fontFamily.sans');
-    margin: 0;
+  :root {
+    --background: 263 20% 98%;
+    --foreground: 263 50% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 263 50% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 263 50% 10%;
+    --primary: 263 69% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 96% 56%;
+    --secondary-foreground: 43 96% 15%;
+    --muted: 263 20% 94%;
+    --muted-foreground: 263 15% 45%;
+    --accent: 263 30% 90%;
+    --accent-foreground: 263 69% 30%;
+    --success: 158 64% 52%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --border: 263 20% 90%;
+    --input: 263 20% 90%;
+    --ring: 263 69% 50%;
+    --chart-1: 263 69% 50%;
+    --chart-2: 43 96% 56%;
+    --chart-3: 158 64% 52%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 38 92% 50%;
+    --radius: 0.5rem;
   }
+ 
+  .dark {
+    --background: 263 30% 8%;
+    --foreground: 263 20% 90%;
+    --card: 263 25% 12%;
+    --card-foreground: 263 20% 90%;
+    --popover: 263 25% 12%;
+    --popover-foreground: 263 20% 90%;
+    --primary: 263 70% 60%;
+    --primary-foreground: 263 50% 10%;
+    --secondary: 43 96% 60%;
+    --secondary-foreground: 43 96% 15%;
+    --muted: 263 20% 18%;
+    --muted-foreground: 263 15% 65%;
+    --accent: 263 25% 20%;
+    --accent-foreground: 263 20% 90%;
+    --success: 158 64% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 63% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --info: 199 89% 45%;
+    --info-foreground: 0 0% 100%;
+    --border: 263 20% 20%;
+    --input: 263 20% 20%;
+    --ring: 263 70% 60%;
+    --chart-1: 263 70% 60%;
+    --chart-2: 43 96% 60%;
+    --chart-3: 158 64% 45%;
+    --chart-4: 199 89% 45%;
+    --chart-5: 38 92% 45%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+  }
+}
+
+/* Hide scrollbar for clean minimal look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background-color: hsl(var(--background) / 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }

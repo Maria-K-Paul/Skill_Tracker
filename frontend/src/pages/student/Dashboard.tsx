@@ -8,14 +8,38 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 
 export function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const domains = [
-    { id: "fullstack", name: "Full Stack", icon: Code2, desc: "Frontend & Backend Development" },
-    { id: "cyber", name: "Cybersecurity", icon: ShieldAlert, desc: "Network & Application Security" },
-    { id: "cloud", name: "Cloud & DevOps", icon: Cloud, desc: "Infrastructure & CI/CD" },
-    { id: "aiml", name: "AI / ML", icon: BrainCircuit, desc: "Machine Learning & Data Science" }
+    { 
+      id: "fullstack", 
+      name: "Full Stack", 
+      icon: Code2, 
+      desc: "Frontend & Backend Development",
+      topics: ["React & Modern UI", "Node.js & Express APIs", "Database Design (SQL/NoSQL)", "System Architecture"]
+    },
+    { 
+      id: "cyber", 
+      name: "Cybersecurity", 
+      icon: ShieldAlert, 
+      desc: "Network & Application Security",
+      topics: ["Ethical Hacking & Penetration Testing", "Network Defense", "Cryptography", "Security Auditing & Compliance"]
+    },
+    { 
+      id: "cloud", 
+      name: "Cloud & DevOps", 
+      icon: Cloud, 
+      desc: "Infrastructure & CI/CD",
+      topics: ["Cloud Platforms (AWS/Azure/GCP)", "Docker & Kubernetes", "CI/CD Pipelines", "Infrastructure as Code"]
+    },
+    { 
+      id: "aiml", 
+      name: "AI / ML", 
+      icon: BrainCircuit, 
+      desc: "Machine Learning & Data Science",
+      topics: ["Data Preprocessing & Analysis", "Deep Learning & Neural Networks", "NLP & Computer Vision", "Model Deployment"]
+    }
   ];
 
   const [activeBookings, setActiveBookings] = useState(0);
@@ -96,84 +120,155 @@ export function StudentDashboard() {
           </Card>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Next Steps</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <h4 className="font-semibold">View your Roadmap</h4>
-                  <p className="text-sm text-muted-foreground">See your path to mastering {user.domain}.</p>
+        <Reveal delay={0.2}>
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <Card className="border-border/40 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Next Steps</CardTitle>
+              </CardHeader>
+            <CardContent className="space-y-3">
+              <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400 }}>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 p-4 transition-all hover:bg-accent/50 cursor-pointer" onClick={() => navigate("/student/roadmap")}>
+                  <div>
+                    <h4 className="font-semibold text-sm">View your Roadmap</h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">See your path to mastering {user.domain}.</p>
+                  </div>
+                  <div className="bg-background shadow-sm border border-border/50 p-2 rounded-lg text-primary">
+                     <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
-                <Button onClick={() => navigate("/student/roadmap")}>Go to Roadmap</Button>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <h4 className="font-semibold">Review Skill Gaps</h4>
-                  <p className="text-sm text-muted-foreground">Check areas where you need to improve.</p>
+              </motion.div>
+              <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400 }}>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 p-4 transition-all hover:bg-accent/50 cursor-pointer" onClick={() => navigate("/student/skill-gap")}>
+                  <div>
+                    <h4 className="font-semibold text-sm">Review Skill Gaps</h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">Check areas where you need to improve.</p>
+                  </div>
+                  <div className="bg-background shadow-sm border border-border/50 p-2 rounded-lg text-primary">
+                     <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
-                <Button variant="outline" onClick={() => navigate("/student/skill-gap")}>Analyze</Button>
-              </div>
+              </motion.div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </Reveal>
+    </div>
     );
   }
 
-  // Otherwise, they see all 4 domains and can take an entrance test for any.
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl px-2">
       <PageHeader 
         title={`Welcome, ${user?.name || "Student"}`} 
         description="Select a domain to take its Entrance Test. Passing will unlock the domain's learning roadmap." 
       />
       
-      <div className="grid gap-6 md:grid-cols-2 mt-8">
+      <motion.div 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid gap-6 md:grid-cols-2 mt-10"
+      >
         {domains.map((domain) => (
-          <Card key={domain.id} className="flex flex-col overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E5E5E5] text-primary">
-                  <domain.icon className="h-6 w-6" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <CardTitle className="text-[16px] font-medium">{domain.name}</CardTitle>
-                  <CardDescription className="text-[14px] text-muted mt-0.5">{domain.desc}</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col flex-1 px-6 pb-6">
-              <div className="mb-6 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Entrance Test Status:</span>
-                  <span className="font-semibold text-amber-600">Not Attempted</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Attempts Remaining:</span>
-                  <div className="flex items-center space-x-1">
-                    <Key className="h-4 w-4 text-amber-500" />
-                    <Key className="h-4 w-4 text-amber-500" />
-                    <Key className="h-4 w-4 text-amber-500" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-auto pt-4">
-                <Button 
-                  className="w-full" 
-                  onClick={() => navigate("/student/book-slot", { state: { testName: `${domain.name} Entrance Test`, domain: domain.name } })}
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Take Entrance Test
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div variants={item} key={domain.id} className="h-full">
+            <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 400 }} className="h-[280px]">
+              <FlipCard 
+                trigger="hover"
+                axis="y"
+                className="h-full w-full"
+                front={
+                  <Card className="flex flex-col overflow-hidden h-full group cursor-pointer border-border/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/30">
+                    <CardContent className="flex flex-col flex-1 p-8 items-center justify-center text-center relative">
+                      <div className="absolute top-0 right-0 p-6 opacity-5 transform translate-x-4 -translate-y-4">
+                        <domain.icon className="w-32 h-32" />
+                      </div>
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/5 text-primary shadow-sm border border-primary/10 mb-6 transition-all duration-500">
+                        <domain.icon className="h-10 w-10" strokeWidth={2} />
+                      </div>
+                      <CardTitle className="text-2xl font-bold tracking-tight relative z-10">{domain.name}</CardTitle>
+                      <div className="mt-4 relative z-10 inline-flex items-center space-x-1.5 px-3 py-1 rounded-md bg-warning/100/10 text-warning text-sm font-semibold">
+                        <span>Not Attempted</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                }
+                back={
+                  <Card className="flex flex-col overflow-hidden h-full group border-primary bg-primary/5 shadow-xl">
+                    <CardContent className="flex flex-col flex-1 p-6 relative z-10">
+                      <CardTitle className="text-xl font-bold tracking-tight mb-2 text-primary">{domain.name}</CardTitle>
+                      <CardDescription className="text-sm text-foreground mb-6 font-medium leading-relaxed">{domain.desc}</CardDescription>
+                      
+                      <div className="mb-4 space-y-3 p-3 rounded-xl bg-background/50 border border-border/40 text-sm flex-1 flex flex-col justify-center">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Entrance Attempts</span>
+                          <div className="flex items-center space-x-1">
+                            <Key className="h-4 w-4 text-warning drop-shadow-sm" />
+                            <Key className="h-4 w-4 text-warning drop-shadow-sm" />
+                            <Key className="h-4 w-4 text-warning drop-shadow-sm" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-auto" onClick={e => e.stopPropagation()}>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              className="w-full shadow-md hover:shadow-xl transition-all duration-300 group-hover:bg-primary/90" 
+                            >
+                              <Target className="mr-2 h-4 w-4" />
+                              Select Domain
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]" onClick={e => e.stopPropagation()}>
+                            <DialogHeader>
+                              <DialogTitle>Confirm Domain Selection</DialogTitle>
+                              <DialogDescription>
+                                You are about to select the <strong className="text-foreground">{domain.name}</strong> domain.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-2 space-y-4">
+                              <p className="text-sm text-muted-foreground">
+                                {domain.desc}
+                              </p>
+                              
+                              <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-border/50">
+                                <h4 className="text-sm font-semibold text-foreground">What you'll learn:</h4>
+                                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                                  {domain.topics.map((topic, i) => (
+                                    <li key={i}>{topic}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg flex items-start space-x-3">
+                                <ShieldAlert className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                                <p className="text-sm text-foreground">
+                                  <strong>Warning:</strong> Once selected, you cannot change this domain until you complete its entire roadmap or lose all your exam keys.
+                                </p>
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button onClick={() => updateUser({ domain: domain.name })}>
+                                  Confirm Selection
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                }
+              />
+            </motion.div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

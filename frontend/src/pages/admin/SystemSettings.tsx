@@ -173,10 +173,10 @@ export function SystemSettings() {
     setSubmitting(true);
     try {
       const slotRes = await api.post("/slots/admin/", {
-        level_id: 1,
-        start_time: slotForm.start_time,
-        end_time: slotForm.end_time,
-        booking_cutoff: slotForm.booking_cutoff,
+        level_id: parseInt(slotForm.level_id),
+        start_time: new Date(slotForm.start_time).toISOString(),
+        end_time: new Date(slotForm.end_time).toISOString(),
+        booking_cutoff: new Date(slotForm.booking_cutoff).toISOString(),
       });
 
       const newSlotId = slotRes.data.id;

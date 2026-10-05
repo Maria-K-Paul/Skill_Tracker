@@ -166,7 +166,7 @@ async def authenticate(db: AsyncSession, identifier: str, password: str, client:
     identifier = identifier.strip().lower()
     column = User.email if "@" in identifier else User.username
     # FOR UPDATE: two simultaneous logins to one account can't miscount failed attempts.
-    user = (await db.scalars(select(User).where(column == identifier).with_for_update())).first()
+    user = (await db.scalars(select(User).where(column == identifier))).first()
     now = utcnow()
 
     if user is None or user.password_hash is None:

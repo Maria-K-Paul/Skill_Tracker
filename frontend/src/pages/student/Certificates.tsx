@@ -6,6 +6,7 @@ import { Award, Download, CheckCircle, QrCode } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { FlipCard } from "../../components/ui/flip-card";
 
 export function Certificates() {
   const { user } = useAuth();
@@ -76,35 +77,70 @@ export function Certificates() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {certificates.map(cert => (
-          <Card key={cert.id} className="overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5">
-            <CardContent className="p-0">
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
-                    <Award className="h-6 w-6" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-mono text-muted-foreground">{cert.id}</div>
-                    <div className="flex items-center justify-end text-xs text-green-600 mt-1 font-medium">
-                      <CheckCircle className="mr-1 h-3 w-3" /> Verified
+          <FlipCard
+            key={cert.id}
+            axis="y"
+            trigger="hover"
+            className="h-[280px]"
+            front={
+              <Card className="h-full w-full overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5">
+                <CardContent className="p-0 flex flex-col h-full">
+                  <div className="p-6 flex-1">
+                    <div className="flex items-start justify-between">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-mono text-muted-foreground">{cert.id}</div>
+                        <div className="flex items-center justify-end text-xs text-success mt-1 font-medium">
+                          <CheckCircle className="mr-1 h-3 w-3" /> Verified
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <h3 className="text-2xl font-bold tracking-tight text-primary">{cert.level}</h3>
+                      <p className="text-sm font-medium mt-1">{cert.domain}</p>
                     </div>
                   </div>
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-2xl font-bold tracking-tight text-primary">{cert.level}</h3>
-                  <p className="text-sm font-medium mt-1">{cert.domain}</p>
-                </div>
-                <div className="mt-6 text-sm text-muted-foreground">
-                  Issued on: {cert.date}
-                </div>
-              </div>
-              <div className="bg-primary/10 px-6 py-4 flex justify-end">
-                <Button size="sm" onClick={() => handleDownload(cert)} disabled={isGenerating}>
-                  <Download className="mr-2 h-4 w-4" /> {isGenerating ? "Generating..." : "Download PDF"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="bg-primary/5 px-6 py-4 flex items-center justify-between border-t border-primary/10 text-xs text-muted-foreground">
+                    <span>Issued: {cert.date}</span>
+                    <span className="flex items-center">Hover for details &rarr;</span>
+                  </div>
+                </CardContent>
+              </Card>
+            }
+            back={
+              <Card className="h-full w-full overflow-hidden border-2 border-primary bg-card shadow-lg">
+                <CardContent className="p-0 flex flex-col h-full">
+                  <div className="p-6 flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                    <QrCode className="h-16 w-16 text-primary" />
+                    <div>
+                      <div className="text-sm font-medium text-muted-foreground">Credential ID</div>
+                      <div className="text-base font-mono font-bold mt-1">{cert.id}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Issue Date</div>
+                        <div className="text-sm font-semibold">{cert.date}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Score</div>
+                        <div className="text-sm font-semibold text-success">Passed</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-primary/10 px-6 py-4 flex justify-end">
+                    {/* Use stopPropagation to prevent hover glitches or unexpected flips during click if trigger was click */}
+                    <div onClick={e => e.stopPropagation()}>
+                      <Button size="sm" onClick={() => handleDownload(cert)} disabled={isGenerating}>
+                        <Download className="mr-2 h-4 w-4" /> {isGenerating ? "Generating..." : "Download PDF"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            }
+          />
         ))}
         {certificates.length === 0 && (
            <div className="col-span-full py-12 text-center text-muted-foreground">
@@ -127,7 +163,7 @@ export function Certificates() {
             
             <div className="text-center z-10 w-full px-20 flex flex-col items-center">
               <div className="text-primary mb-6 flex justify-center">
-                <Award className="w-20 h-20 text-teal-600" />
+                <Award className="w-20 h-20 text-primary" />
               </div>
               
               <h1 className="text-5xl font-serif text-slate-800 tracking-wider mb-2 uppercase">
@@ -143,7 +179,7 @@ export function Certificates() {
               </p>
               
               <p className="text-lg italic text-slate-600 mb-4">has successfully completed the assessment for</p>
-              <p className="text-3xl font-bold text-teal-700 mb-2">
+              <p className="text-3xl font-bold text-primary mb-2">
                 {selectedCert.level}
               </p>
               <p className="text-xl font-semibold text-slate-700 mb-12">
@@ -165,8 +201,8 @@ export function Certificates() {
             </div>
             
             {/* Subtle background graphics */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-teal-100/50 rounded-br-full -z-10"></div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-teal-100/50 rounded-tl-full -z-10"></div>
+            <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-br-full -z-10"></div>
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/10 rounded-tl-full -z-10"></div>
           </div>
         </div>
       )}
