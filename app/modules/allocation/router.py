@@ -11,8 +11,6 @@ Routes:
   GET  /allocation/{slot_id}      — view allocation summary for a slot
 """
 
-import uuid
-
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +31,7 @@ router = APIRouter()
     summary="Run allocation for a slot (admin)",
 )
 async def run_allocation(
-    slot_id: uuid.UUID,
+    slot_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> schemas.AllocationRunResponse:
@@ -63,7 +61,7 @@ async def run_allocation(
     summary="View allocations for a slot (admin)",
 )
 async def get_slot_allocations(
-    slot_id: uuid.UUID,
+    slot_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.AllocationResponse]:

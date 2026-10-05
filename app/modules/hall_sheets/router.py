@@ -17,7 +17,6 @@ Routes:
   GET /hall-sheets/{slot_id}/{hall_id}/print     — printable sheet with codes, audited
 """
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -37,7 +36,7 @@ router = APIRouter()
     summary="Get hall-wise sheet for a slot (admin, no codes)",
 )
 async def get_hall_sheet(
-    slot_id: uuid.UUID,
+    slot_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.HallSheetSlotResponse]:
@@ -49,8 +48,7 @@ async def get_hall_sheet(
     """
     rows = await service.get_hall_sheet(slot_id=slot_id, db=db)
 
-    # Group rows by hall_id.
-    halls: dict[uuid.UUID, list[schemas.HallSheetRow]] = {}
+    halls: dict[int, list[schemas.HallSheetRow]] = {}
     for row in rows:
         halls.setdefault(row.hall_id, []).append(row)
 
@@ -66,8 +64,8 @@ async def get_hall_sheet(
     summary="Get printable hall sheet with codes (admin, audited per row)",
 )
 async def get_printable_hall_sheet(
-    slot_id: uuid.UUID,
-    hall_id: uuid.UUID,
+    slot_id: int,
+    hall_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> schemas.HallSheetPrintResponse:
@@ -77,11 +75,7 @@ async def get_printable_hall_sheet(
     AUDIT: One audit log entry is written per student row on every call.
     This is intentional and per spec — do not try to cache or deduplicate reveals.
     """
-    admin_id = (
-        current_admin["id"]
-        if isinstance(current_admin["id"], uuid.UUID)
-        else uuid.UUID(str(current_admin["id"]))
-    )
+    admin_id: int = current_admin["id"]
     rows = await service.get_printable_hall_sheet(
         slot_id=slot_id,
         hall_id=hall_id,
@@ -100,8 +94,8 @@ async def get_printable_hall_sheet(
     summary="Download hall sheet PDF with secret codes (admin, audited)",
 )
 async def download_hall_sheet_pdf(
-    slot_id: uuid.UUID,
-    hall_id: uuid.UUID,
+    slot_id: int,
+    hall_id: int,
     current_admin: dict = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -110,11 +104,7 @@ async def download_hall_sheet_pdf(
 
     AUDIT: One audit log entry is written per student row.
     """
-    admin_id = (
-        current_admin["id"]
-        if isinstance(current_admin["id"], uuid.UUID)
-        else uuid.UUID(str(current_admin["id"]))
-    )
+    admin_id: int = current_admin["id"]
 
     pdf_buffer = await service.generate_hall_sheet_pdf(
         slot_id=slot_id,
@@ -124,7 +114,6 @@ async def download_hall_sheet_pdf(
     )
     await db.commit()
 
-    # Return PDF as downloadable file
     headers = {
         'Content-Disposition': f'attachment; filename="hall_sheet_{hall_id}_{slot_id}.pdf"'
     }
